@@ -1,4 +1,13 @@
 
+#' Get a single name for a treelabel
+#'
+#' Returns the name of the first node from the bottom where the score
+#' is higher than the threshold. If multiple nodes pass the threshold and are equally far away
+#' from the root, the one with the higher score is returned.
+#'
+#' @param x `treelabel` vector
+#' @param threshold the threshold against which each score is compared.
+#'
 #' @export
 tl_name <- function(x, threshold = 0){
   data <- tl_score_matrix(x)
@@ -14,7 +23,7 @@ tl_name <- function(x, threshold = 0){
     max_score <- -Inf
     max_dist <- -Inf
     sel_label <- NA_character_
-    for(j in which(row >= threshold)){
+    for(j in which(row > threshold)){
       if(dist[j] > max_dist){
         max_dist <- dist[j]
         max_score <- row[j]

@@ -11,7 +11,7 @@
   colnames <- colnames(data)
   tree <- attr(x, "tree")
   dists <- attr(x, "distances")
-  children <- lapply(igraph::V(g), \(v){
+  children <- lapply(igraph::V(tree), \(v){
     match(igraph::neighbors(tree, v, mode = "out")$name, colnames)
   })
   for(idx in order(dists, decreasing = TRUE)){
@@ -25,7 +25,7 @@
       data[,names(children)[idx]] <- data[,names(children)[idx]] %|% child_sum
     }
   }
-  new_treelabel(data, tree)
+  .treelabel_like(data, like = x)
 }
 
 
@@ -34,11 +34,11 @@
   colnames <- colnames(data)
   tree <- attr(x, "tree")
   dists <- attr(x, "distances")
-  children <- lapply(igraph::V(g), \(v){
+  children <- lapply(igraph::V(tree), \(v){
     match(igraph::neighbors(tree, v, mode = "out")$name, colnames)
   })
   for(idx in order(dists)){
     data[is.na(data[,idx]), children[[idx]]] <- NA
   }
-  new_treelabel(data, tree)
+  .treelabel_like(data, like = x)
 }

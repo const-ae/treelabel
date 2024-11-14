@@ -6,6 +6,9 @@
 \usage{
 tl_score_matrix(x)
 }
+\arguments{
+\item{x}{`treelabel` vector}
+}
 \description{
 Low-level function to access the data underlying a tree label
 }

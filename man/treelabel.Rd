@@ -14,7 +14,7 @@ treelabel(x, tree, ...)
 
 \method{treelabel}{matrix}(x, tree, ...)
 
-\method{treelabel}{data.frame}(x, tree, id = "id", label = "label", score = "score")
+\method{treelabel}{data.frame}(x, tree, id = "id", label = "label", score = "score", ...)
 
 \method{treelabel}{list}(x, tree, ...)
 
@@ -23,6 +23,17 @@ treelabel(x, tree, ...)
 \method{treelabel}{character}(x, tree, ...)
 
 \method{treelabel}{factor}(x, tree, ...)
+}
+\arguments{
+\item{x}{object that is converted to a `treelabel`}
+
+\item{tree}{`igraph` object that represents the hierarchical relationship
+of the labels. The root of the tree must be named `"root"`.}
+
+\item{...}{additional arguments. Provided for compatability.}
+
+\item{id, label, score}{strings that specify the names of the respective
+columns in the `treelabel.data.frame` constructor.}
 }
 \description{
 Make a tree label vector

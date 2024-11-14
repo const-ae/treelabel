@@ -24,7 +24,7 @@ vec_arith.treelabel.treelabel <- function(op, x, y, ...){
   op_fn <- getExportedValue("base", op)
   args <- vctrs::vec_recycle_common(x, y)
   new_data <- op_fn(vctrs::field(args[[1L]], "data"), vctrs::field(args[[2L]], "data"))
-  new_treelabel(new_data, attr(x, "tree"))
+  .treelabel_like(new_data, like = x)
 }
 
 #' @export
@@ -34,7 +34,7 @@ vec_arith.treelabel.numeric <- function(op, x, y, ...){
   args <- vctrs::vec_recycle_common(x, y)
 
   new_data <- op_fn(vctrs::field(args[[1L]], "data"), args[[2L]])
-  new_treelabel(new_data, attr(x, "tree"))
+  .treelabel_like(new_data, like = x)
 }
 
 #' @importFrom vctrs vec_arith.numeric
@@ -45,16 +45,16 @@ vec_arith.numeric.treelabel <- function(op, x, y, ...){
   args <- vctrs::vec_recycle_common(x, y)
 
   new_data <- op_fn(args[[1L]], vctrs::field(args[[2L]], "data"))
-  new_treelabel(new_data, attr(y, "tree"))
+  .treelabel_like(new_data, like = x)
 }
 
 #' @importFrom vctrs vec_math
 #' @export
-vec_math.treelabel <- function(.fn, x, ...){
+vec_math.treelabel <- function(.fn, .x, ...){
   summary_fncs <- c("prod", "sum", "any", "all", "cummax", "cummin", "cumprod", "cumsum", "mean")
   fn <- switch(.fn,
     "prod" = matrixStats::colProds,
-    "sum" = matrixStats::colSums,
+    "sum" = matrixStats::colSums2,
     "any" = matrixStats::colAnys,
     "all" = matrixStats::colAlls,
     "cummax" = matrixStats::colCummaxs,
@@ -65,11 +65,11 @@ vec_math.treelabel <- function(.fn, x, ...){
     getExportedValue("base", .fn)
   )
   res <- if(.fn %in% summary_fncs){
-    vec <- fn(tl_score_matrix(x), ..., useNames = TRUE)
+    vec <- fn(tl_score_matrix(.x), ..., useNames = TRUE)
     matrix(vec, nrow = 1, dimnames = list(NULL, names(vec)))
   }else{
-    fn(tl_score_matrix(x), ...)
+    fn(tl_score_matrix(.x), ...)
   }
-  new_treelabel(res, attr(x, "tree"))
+  .treelabel_like(new_data, like = .x)
 }
 

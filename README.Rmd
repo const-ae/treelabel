@@ -1,0 +1,64 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# treelabel
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of treelabel is to allow storing labels which exist in a hierarchical relationship.
+
+## Installation
+
+You can install the development version of treelabel like so:
+
+``` r
+devtools::install_github("const-ae/treelabel")
+```
+
+## Example
+
+We begin by defining our label hierarchy using [`igraph`](https://r.igraph.org/articles/igraph.html).
+
+```{r}
+tree <- igraph::graph_from_literal(
+  Animal - Bird : Mammal,
+  Mammal - Cat : Dog,
+  Dog - Retriever : Poodle,
+  Bird - Parrot : Eagle,
+  Parrot - Ara  : Budgie
+)
+plot(tree, layout = igraph::layout_as_tree(tree, root = "Animal"),
+     vertex.size = 40, vertex.label.cex = 0.8)
+```
+
+
+```{r}
+library(treelabel)
+vec <- treelabel(c("Ara", "Eagle", "Cat", "Ara", "Poodle", "Cat", "Cat"), tree = tree, tree_root = "Animal")
+vec
+
+tl_eval(vec, Eagle)
+elem <- treelabel("Ara", tree = tree, tree_root = "Animal")
+vctrs::field(elem, "data") <- tl_score_matrix(elem) %|% matrix(rep(0, 11), nrow = 1)
+vctrs::field(vec[1], "data") <- tl_score_matrix(elem) %|% matrix(rep(0, 11), nrow = 1)
+elem == "Eagle"
+
+
+vctrs::vec_compare(vec, treelabel("Ara", tree = tree, tree_root = "Animal"), na_equal = TRUE)
+vctrs::vec_proxy_equal(vec, treelabel("Ara", tree = tree, tree_root = "Animal"))
+```
+
+

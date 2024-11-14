@@ -1,25 +1,34 @@
 
 #' Make a tree label vector
 #'
+#' @param x object that is converted to a `treelabel`
+#' @param tree `igraph` object that represents the hierarchical relationship
+#'   of the labels. Must satisfy `igraph::is_tree`. (_)
+#' @param tree_root the name of the root of the tree. Default: `"root"`.
+#' @param ... additional arguments. Provided for compatability.
+#' @param id,label,score strings that specify the names of the respective
+#'   columns in the `treelabel.data.frame` constructor.
+#'
+#'
 #' @export
-treelabel <- function(x, tree, ...){
+treelabel <- function(x, tree,  tree_root = "root", ...){
   UseMethod("treelabel")
 }
 
 #' @export
 #' @rdname treelabel
-treelabel.matrix <- function(x, tree, ...){
-  .propagate_score_up(new_treelabel(x, tree), overwrite = FALSE)
+treelabel.matrix <- function(x, tree, tree_root = "root", ...){
+  .propagate_score_up(new_treelabel(x, tree, tree_root = tree_root), overwrite = FALSE)
 }
 
 #' @export
 #' @rdname treelabel
-treelabel.data.frame <- function(x, tree, id = "id", label = "label", score = "score"){
+treelabel.data.frame <- function(x, tree, tree_root = "root", id = "id", label = "label", score = "score", ...){
   stopifnot(igraph::is_tree(tree))
   stopifnot(c(id, label, score) %in% colnames(x))
   vertex_names <- .tree_vertex_names(tree)
 
-  uniq_names <- na.omit(unique(x[[label]]))
+  uniq_names <- stats::na.omit(unique(x[[label]]))
   if(! all(uniq_names %in% vertex_names)){
     stop(toString(paste0("'", uniq_names[which(! uniq_names %in% vertex_names)], "'"), width = 40), " not in tree")
 
@@ -29,38 +38,44 @@ treelabel.data.frame <- function(x, tree, id = "id", label = "label", score = "s
   data <- matrix(NA_real_, nrow = nlevels(ids), ncol = length(vertex_names),
                  dimnames = list(NULL, vertex_names))
   data <- .assign_to_matrix(data, labels = x[[label]], ids = ids, scores = x[[score]])
-  .propagate_score_up(new_treelabel(data, tree), overwrite = FALSE)
+  .propagate_score_up(new_treelabel(data, tree, tree_root = tree_root), overwrite = FALSE)
 }
 
 #' @export
 #' @rdname treelabel
-treelabel.list <- function(x, tree, ...){
+treelabel.list <- function(x, tree, tree_root = "root", ...){
   names <- unlist(lapply(x, names))
   vals <- unname(unlist(x))
   ids <- rep(seq_along(x), times = lengths(x))
-  treelabel(data.frame(id = ids, label = names, score = vals), tree = tree)
+  treelabel(data.frame(id = ids, label = names, score = vals),
+            tree = tree, tree_root = tree_root, ...)
 }
 
 #' @export
 #' @rdname treelabel
-treelabel.numeric <- function(x, tree, ...){
-  treelabel(data.frame(id =  seq_along(x), label = names(x), score = unname(x)), tree = tree)
+treelabel.numeric <- function(x, tree, tree_root = "root", ...){
+  treelabel(data.frame(id =  seq_along(x), label = names(x), score = unname(x)),
+            tree = tree, tree_root = tree_root, ...)
 }
 
 #' @export
 #' @rdname treelabel
-treelabel.character <- function(x, tree, ...){
-  treelabel(rlang::rep_named(x, 1), tree = tree)
+treelabel.character <- function(x, tree, tree_root = "root", ...){
+  treelabel(rlang::rep_named(x, 1), tree = tree, tree_root = tree_root, ...)
 }
 
 #' @export
 #' @rdname treelabel
-treelabel.factor <- function(x, tree, ...){
-  treelabel(as.character(x), tree = tree)
+treelabel.factor <- function(x, tree, tree_root = "root", ...){
+  treelabel(as.character(x), tree = tree, tree_root = tree_root, ...)
 }
 
+.treelabel_like <- function(data, like){
+  new_treelabel(data, attr(like, "tree"), tree_root = attr(like, "tree_root"),
+                distances = attr(like, "distances"))
+}
 
-new_treelabel <- function(data, tree){
+new_treelabel <- function(data, tree, tree_root = "root", distances = NULL){
   if(! inherits(data, "matrix")){
     stop("'data' must be a matrix")
   }
@@ -72,19 +87,26 @@ new_treelabel <- function(data, tree){
   # Very useful to do things in a bottom up or top down order
   # The distances match the columns of the data
   # The order of the tree vertices is still random
-  distances <- igraph::distances(tree, v = "root", mode = "out")
-  data <- data[,vertex_names[order(distances)],drop=FALSE]
-  distances <- sort(distances)
+  if(is.null(distances)){
+    distances <- igraph::distances(tree, v = tree_root, mode = "out")
+    data <- data[,vertex_names[order(distances)],drop=FALSE]
+    distances <- sort(distances)
+  }
 
   vctrs::new_rcrd(
     list(data = data),
     tree = tree,
+    root = tree_root,
     distances = distances,
     class = "treelabel"
   )
 }
 
 
+#' Check if a vector is a treelabel
+#'
+#' @param x object
+#'
 #'
 #' @export
 is_treelabel <- function(x){
