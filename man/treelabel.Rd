@@ -2,6 +2,7 @@
 % Please edit documentation in R/treelabel.R
 \name{treelabel}
 \alias{treelabel}
+\alias{treelabel.matrix}
 \alias{treelabel.data.frame}
 \alias{treelabel.list}
 \alias{treelabel.numeric}
@@ -10,6 +11,8 @@
 \title{Make a tree label vector}
 \usage{
 treelabel(x, tree, ...)
+
+\method{treelabel}{matrix}(x, tree, ...)
 
 \method{treelabel}{data.frame}(x, tree, id = "id", label = "label", score = "score")
 

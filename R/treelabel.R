@@ -8,6 +8,12 @@ treelabel <- function(x, tree, ...){
 
 #' @export
 #' @rdname treelabel
+treelabel.matrix <- function(x, tree, ...){
+  .propagate_score_up(new_treelabel(x, tree), overwrite = FALSE)
+}
+
+#' @export
+#' @rdname treelabel
 treelabel.data.frame <- function(x, tree, id = "id", label = "label", score = "score"){
   stopifnot(igraph::is_tree(tree))
   stopifnot(c(id, label, score) %in% colnames(x))
