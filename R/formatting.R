@@ -30,5 +30,5 @@ vec_ptype_abbr.treelabel <- function(x, ...) {
 }
 
 .label_names <- function(x){
-  .tree_vertex_names(attr(x, "tree"))
+  colnames(vctrs::field(x, "data"))
 }
