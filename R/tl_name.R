@@ -1,8 +1,8 @@
 
 #' @export
-tl_name <- function(x, threshold = 0.8){
-  data <- vctrs::field(x, "data")
-  colnames <- colnames(vctrs::field(x, "data"))
+tl_name <- function(x, threshold = 0){
+  data <- tl_score_matrix(x)
+  colnames <- colnames(data)
   dist <- attr(x, "distances")
   .select_passing_score_by_level(data, threshold = threshold, label = colnames, dist = dist)
 }

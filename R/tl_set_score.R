@@ -10,7 +10,7 @@ tl_set_score <- function(x, label, score,
   x <- args[[1L]]; label <- args[[2L]]; score <- args[[3L]]
 
 
-  new_data <- .assign_to_matrix(vctrs::field(x, "data"), ids = seq_along(x),
+  new_data <- .assign_to_matrix(tl_score_matrix(x), ids = seq_along(x),
                                 labels = label, scores = score)
   res <- new_treelabel(new_data, attr(x, "tree"))
   if(propagate_values_up){

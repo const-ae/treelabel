@@ -34,6 +34,10 @@ test_that("making a tree labels is easy", {
   tmp
 
 
+  abs(log(tmp))
+  mean(tmp, na.rm=TRUE) |> tl_score_matrix()
+
+
   tib <- dplyr::bind_rows(lapply(label_list, tibble::enframe), .id = "id")
   tmp2 <- treelabel(tib, tree = g, id = "id", label = "name", score = "value")
 
@@ -96,7 +100,7 @@ test_that("making a tree labels is easy", {
   vctrs::field(dplyr::if_else(tl_eval(tmp, `t cell` > 0.5), tmp, tl_set_score(tmp, "root", NA)), "data")
 
   tl_set_score(tmp, "lymphoid cell", NA) |> vctrs::field("data")
-  tl_set_score(tmp[7], "CD8 t cell", 17, propagate_values_up = TRUE) |> vctrs::field("data")
+  tl_set_score(tmp, rlang::rep_along(tmp, c("CD8 t cell", "neutrophil")), 17, propagate_values_up = TRUE) |> vctrs::field("data")
 
   indirect_eval <- function(expr){
     tl_eval(tmp, {{expr}})

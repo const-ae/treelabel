@@ -7,7 +7,7 @@
 
 #' @importFrom rlang `%|%`
 .propagate_score_up <- function(x, overwrite = FALSE){
-  data <- vctrs::field(x, "data")
+  data <- tl_score_matrix(x)
   colnames <- colnames(data)
   tree <- attr(x, "tree")
   dists <- attr(x, "distances")
@@ -30,7 +30,7 @@
 
 
 .propagate_NAs_down <- function(x){
-  data <- vctrs::field(x, "data")
+  data <- tl_score_matrix(x)
   colnames <- colnames(data)
   tree <- attr(x, "tree")
   dists <- attr(x, "distances")

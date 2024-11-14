@@ -1,7 +1,7 @@
 #' @importFrom vctrs vec_proxy_equal
 #' @export
 vec_proxy_equal.treelabel <- function(x, ...){
-  tibble::as_tibble(vctrs::field(x, "data"))
+  tibble::as_tibble(tl_score_matrix(x))
 }
 
 #' @importFrom vctrs vec_arith
@@ -47,3 +47,29 @@ vec_arith.numeric.treelabel <- function(op, x, y, ...){
   new_data <- op_fn(args[[1L]], vctrs::field(args[[2L]], "data"))
   new_treelabel(new_data, attr(y, "tree"))
 }
+
+#' @importFrom vctrs vec_math
+#' @export
+vec_math.treelabel <- function(.fn, x, ...){
+  summary_fncs <- c("prod", "sum", "any", "all", "cummax", "cummin", "cumprod", "cumsum", "mean")
+  fn <- switch(.fn,
+    "prod" = matrixStats::colProds,
+    "sum" = matrixStats::colSums,
+    "any" = matrixStats::colAnys,
+    "all" = matrixStats::colAlls,
+    "cummax" = matrixStats::colCummaxs,
+    "cummin" = matrixStats::colCummins,
+    "cumprod" = matrixStats::colCumprods,
+    "cumsum" = matrixStats::colCumsums,
+    "mean" = matrixStats::colMeans2,
+    getExportedValue("base", .fn)
+  )
+  res <- if(.fn %in% summary_fncs){
+    vec <- fn(tl_score_matrix(x), ..., useNames = TRUE)
+    matrix(vec, nrow = 1, dimnames = list(NULL, names(vec)))
+  }else{
+    fn(tl_score_matrix(x), ...)
+  }
+  new_treelabel(res, attr(x, "tree"))
+}
+

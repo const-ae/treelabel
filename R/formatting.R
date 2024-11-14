@@ -30,5 +30,5 @@ vec_ptype_abbr.treelabel <- function(x, ...) {
 }
 
 .label_names <- function(x){
-  colnames(vctrs::field(x, "data"))
+  colnames(tl_score_matrix(x))
 }

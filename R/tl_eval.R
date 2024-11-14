@@ -4,7 +4,7 @@
 #' @export
 tl_eval <- function(x, expr, ...){
   expr <- rlang::enquo(expr)
-  data <- vctrs::field(x, "data")
+  data <- tl_score_matrix(x)
   data_tib <- tibble::as_tibble(data)
   mask <- rlang::as_data_mask(data_tib)
   mask$.tl <- rlang::as_data_pronoun(data_tib)
@@ -14,7 +14,7 @@ tl_eval <- function(x, expr, ...){
 #' @export
 tl_get_score <- function(x, name){
   name <- vctrs::vec_cast(name, to = "character")
-  data <- vctrs::field(x, "data")
+  data <- tl_score_matrix(x)
   if(length(name) == 1){
     data[,name]
   }else if(length(name) == length(x)){
