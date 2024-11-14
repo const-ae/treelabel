@@ -66,6 +66,36 @@ test_that("making a tree labels is easy", {
   tibble::tibble(x = c(1,1,1, 1), y = c(5, NA, 5, NA)) |>
     unique()
 
+
+  tibble::tibble(cell_id = 1:7, label1 = tmp, label2 =  tmp2 + rnorm(7, sd = 0.02)) |>
+    dplyr::filter(tl_eval(label1, `lymphoid cell`) > tl_eval(label2, `lymphoid cell`)) |>
+    # dplyr::filter(tf_evals(starts_with("label"), `lymphoid cell` > 0.8) |> rowMeans())
+    mutate(as.matrix(across(starts_with("label"), \(x) tl_eval, `lymphoid cell` > 0.8)) |> rowMeans())
+
+  tl_eval(tmp, `lymphoid cell`)
+
+
+
+
+  tibble::tibble(cell_id = 1:7, label1 = tmp, label2 =  tmp2 + rnorm(7, sd = 0.02)) |>
+    # mutate(across("cell_id", \(x) x + 3))
+    # mutate(tl_across(c("label1", "label2"), `t cell` + 1))
+    # mutate(tl_across(starts_with("label"), `t cell` + 1))
+    filter(tl_if_any(starts_with("label"), `t cell` > 0.3))
+
+  tibble::tibble(cell_id = 1:7, label1 = tmp, label2 =  tmp2 + rnorm(7, sd = 0.02),
+                 label3 = treelabel("dendritic cell", tree = g)) |>
+    # dplyr::mutate(new = tl_across(dplyr::starts_with("label"), `dendritic cell`))
+    # dplyr::filter(tl_if_any(dplyr::starts_with("label"), `t cell` > 0.8))
+    # dplyr::filter(tl_if_any(dplyr::starts_with("label"), `t cell` > 0.8))
+    dplyr::mutate(new = tl_countNAs_across(dplyr::starts_with("label"), `dendritic cell`))
+
+
+
+  indirect_eval <- function(expr){
+    tl_eval(tmp, {{expr}})
+  }
+  indirect_eval(`t cell`)
 })
 
 

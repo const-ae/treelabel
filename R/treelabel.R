@@ -114,6 +114,11 @@ new_treelabel <- function(data, tree){
 }
 
 
+#'
+#' @export
+is_treelabel <- function(x){
+  inherits(x, "treelabel")
+}
 
 .clamp <- function(x, min = 0, max = 1){
   pmin(x, max) |> pmax(min)
