@@ -60,8 +60,20 @@ treelabel.numeric <- function(x, tree, tree_root = "root", ...){
 
 #' @export
 #' @rdname treelabel
+treelabel.logical <- function(x, tree, tree_root = "root", ...){
+  treelabel(data.frame(id =  seq_along(x), label = names(x), score = unname(x)),
+            tree = tree, tree_root = tree_root, ...)
+}
+
+#' @export
+#' @rdname treelabel
 treelabel.character <- function(x, tree, tree_root = "root", ...){
-  treelabel(rlang::rep_named(x, 1), tree = tree, tree_root = tree_root, ...)
+  res <- treelabel(rlang::rep_named(x, 1), tree = tree, tree_root = tree_root, ...)
+  mat <- tl_score_matrix(res)
+  mat[is.na(mat)] <- 0
+  mat[is.na(x),] <- NA
+  vctrs::field(res, "data") <- mat != 0
+  res
 }
 
 #' @export

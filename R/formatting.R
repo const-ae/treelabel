@@ -6,8 +6,14 @@
 #' @export
 format.treelabel <- function(x, ...){
   names <- tl_name(x)
-  scores <- tl_get_score(x, names)
-  paste0(names, "(", sprintf("%.2f", scores), ")")
+  scores <- tl_get(x, names)
+  if(is.logical(scores)){
+    names
+  }else{
+    res <- paste0(names, "(", sprintf("%.2f", scores), ")")
+    res[is.na(names) | is.na(scores)] <- NA
+    res
+  }
 }
 
 
