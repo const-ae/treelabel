@@ -2,14 +2,15 @@
 #' @export
 vec_proxy_equal.treelabel <- function(x, ...){
   mat <- tl_score_matrix(x)
-  if(ncol(mat) <= 1){
-    tibble::as_tibble(mat)
-  }else{
-    root_col <- mat[,1,drop=FALSE]
-    rest_cols <- mat[,-1,drop=FALSE]
-    rest_cols[is.na(rest_cols)] <- 0
-    tibble::as_tibble(cbind(root_col, rest_cols))
-  }
+  tibble::as_tibble(mat)
+  # if(ncol(mat) <= 1){
+  #   tibble::as_tibble(mat)
+  # }else{
+  #   root_col <- mat[,1,drop=FALSE]
+  #   rest_cols <- mat[,-1,drop=FALSE]
+  #   rest_cols[is.na(rest_cols)] <- 0
+  #   tibble::as_tibble(cbind(root_col, rest_cols))
+  # }
 }
 
 #' @importFrom vctrs vec_arith
