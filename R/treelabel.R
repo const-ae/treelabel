@@ -12,7 +12,11 @@
 #'
 #' @export
 treelabel <- function(x, tree,  tree_root = "root", ...){
-  UseMethod("treelabel")
+  if(missing(x)){
+    treelabel.missing(tree = tree, tree_root = tree_root, ...)
+  }else{
+    UseMethod("treelabel")
+  }
 }
 
 #' @export
@@ -80,6 +84,12 @@ treelabel.character <- function(x, tree, tree_root = "root", ...){
 #' @rdname treelabel
 treelabel.factor <- function(x, tree, tree_root = "root", ...){
   treelabel(as.character(x), tree = tree, tree_root = tree_root, ...)
+}
+
+#' @export
+#' @rdname treelabel
+treelabel.missing <- function(x, tree, tree_root = "root", ...){
+  treelabel(character(0L), tree, tree_root = tree_root)
 }
 
 .treelabel_like <- function(data, like){
