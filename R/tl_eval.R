@@ -23,13 +23,13 @@ tl_eval <- function(x, expr, ...){
 #' @param name the name of one of the nodes in the tree
 #'
 #' @export
-tl_get_score <- function(x, name){
+tl_get <- function(x, name){
   name <- vctrs::vec_cast(name, to = "character")
   args <- vctrs::vec_recycle_common(x, name)
   x <- args[[1L]]; name <- args[[2L]]
 
   data <- tl_score_matrix(x)
-  if(! all(name %in% colnames(data))){
+  if(! all(stats::na.omit(name) %in% colnames(data))){
     stop("Illegal name")
   }
 
