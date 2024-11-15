@@ -7,13 +7,13 @@
 tl_eval(x, expr, ...)
 }
 \arguments{
-\item{x}{`treelabel` vector}
+\item{x}{\code{treelabel} vector}
 
 \item{expr}{an unquoted expression that is evaluated in the treelabel
 environment. Can, for example, be used to check if a particular
 score is higher than a threshold}
 
-\item{...}{additional arguments passed on to `rlang::eval_tidy`}
+\item{...}{additional arguments passed on to \code{rlang::eval_tidy}}
 }
 \description{
 Evaluate an expression in the tree label environment

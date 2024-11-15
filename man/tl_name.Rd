@@ -7,7 +7,7 @@
 tl_name(x, threshold = 0)
 }
 \arguments{
-\item{x}{`treelabel` vector}
+\item{x}{\code{treelabel} vector}
 
 \item{threshold}{the threshold against which each score is compared.}
 }

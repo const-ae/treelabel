@@ -6,34 +6,50 @@
 \alias{treelabel.data.frame}
 \alias{treelabel.list}
 \alias{treelabel.numeric}
+\alias{treelabel.logical}
 \alias{treelabel.character}
 \alias{treelabel.factor}
+\alias{treelabel.missing}
 \title{Make a tree label vector}
 \usage{
-treelabel(x, tree, ...)
+treelabel(x, tree, tree_root = "root", ...)
 
-\method{treelabel}{matrix}(x, tree, ...)
+\method{treelabel}{matrix}(x, tree, tree_root = "root", ...)
 
-\method{treelabel}{data.frame}(x, tree, id = "id", label = "label", score = "score", ...)
+\method{treelabel}{data.frame}(
+  x,
+  tree,
+  tree_root = "root",
+  id = "id",
+  label = "label",
+  score = "score",
+  ...
+)
 
-\method{treelabel}{list}(x, tree, ...)
+\method{treelabel}{list}(x, tree, tree_root = "root", ...)
 
-\method{treelabel}{numeric}(x, tree, ...)
+\method{treelabel}{numeric}(x, tree, tree_root = "root", ...)
 
-\method{treelabel}{character}(x, tree, ...)
+\method{treelabel}{logical}(x, tree, tree_root = "root", ...)
 
-\method{treelabel}{factor}(x, tree, ...)
+\method{treelabel}{character}(x, tree, tree_root = "root", ...)
+
+\method{treelabel}{factor}(x, tree, tree_root = "root", ...)
+
+\method{treelabel}{missing}(x, tree, tree_root = "root", ...)
 }
 \arguments{
-\item{x}{object that is converted to a `treelabel`}
+\item{x}{object that is converted to a \code{treelabel}}
 
-\item{tree}{`igraph` object that represents the hierarchical relationship
-of the labels. The root of the tree must be named `"root"`.}
+\item{tree}{\code{igraph} object that represents the hierarchical relationship
+of the labels. Must satisfy \code{igraph::is_tree}. (_)}
+
+\item{tree_root}{the name of the root of the tree. Default: \code{"root"}.}
 
 \item{...}{additional arguments. Provided for compatability.}
 
 \item{id, label, score}{strings that specify the names of the respective
-columns in the `treelabel.data.frame` constructor.}
+columns in the \code{treelabel.data.frame} constructor.}
 }
 \description{
 Make a tree label vector

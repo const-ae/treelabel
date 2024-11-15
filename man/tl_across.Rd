@@ -25,7 +25,7 @@ tl_countNAs_across(.cols, expr, na.rm = TRUE)
 \item{.cols}{tidyselect expression of the column which contain the treelabel
 columns}
 
-\item{expr}{an unquoted expression evaluated with `tl_eval` for each column.}
+\item{expr}{an unquoted expression evaluated with \code{tl_eval} for each column.}
 
 \item{na.rm}{boolean that decides if missing values are ignored.}
 }
@@ -33,5 +33,5 @@ columns}
 dplyr-style across functions for treelabels
 }
 \seealso{
-[dplyr::across()]
+\code{\link[dplyr:across]{dplyr::across()}}
 }
