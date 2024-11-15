@@ -39,7 +39,7 @@ treelabel.data.frame <- function(x, tree, tree_root = "root", id = "id", label =
   }
 
   ids <- as.factor(x[[id]])
-  data <- matrix(NA_real_, nrow = nlevels(ids), ncol = length(vertex_names),
+  data <- matrix(NA, nrow = nlevels(ids), ncol = length(vertex_names),
                  dimnames = list(NULL, vertex_names))
   data <- .assign_to_matrix(data, labels = x[[label]], ids = ids, scores = x[[score]])
   .propagate_score_up(new_treelabel(data, tree, tree_root = tree_root), overwrite = FALSE)
