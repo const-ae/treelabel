@@ -6,8 +6,6 @@
 #'   of the labels. Must satisfy `igraph::is_tree`. (_)
 #' @param tree_root the name of the root of the tree. Default: `"root"`.
 #' @param ... additional arguments. Provided for compatability.
-#' @param id,label,score strings that specify the names of the respective
-#'   columns in the `treelabel.data.frame` constructor.
 #'
 #'
 #' @export
@@ -22,29 +20,10 @@ treelabel <- function(x, tree,  tree_root = "root", ...){
 #' @export
 #' @rdname treelabel
 treelabel.matrix <- function(x, tree, tree_root = "root", ...){
-  .propagate_score_up(new_treelabel(x, tree, tree_root = tree_root), overwrite = FALSE)
+  .propagate_score_up(new_treelabel(x, tree, tree_root = tree_root, ...), overwrite = FALSE)
 }
 
-#' @export
-#' @rdname treelabel
-treelabel.data.frame <- function(x, tree, tree_root = "root", id = "id", label = "label", score = "score", ...){
-  stopifnot(igraph::is_tree(tree))
-  stopifnot(c(id, label, score) %in% colnames(x))
-  vertex_names <- .tree_vertex_names(tree)
-
-  uniq_names <- stats::na.omit(unique(x[[label]]))
-  if(! all(uniq_names %in% vertex_names)){
-    stop(toString(paste0("'", uniq_names[which(! uniq_names %in% vertex_names)], "'"), width = 40), " not in tree")
-
-  }
-
-  ids <- as.factor(x[[id]])
-  data <- matrix(NA, nrow = nlevels(ids), ncol = length(vertex_names),
-                 dimnames = list(NULL, vertex_names))
-  data <- .assign_to_matrix(data, labels = x[[label]], ids = ids, scores = x[[score]])
-  .propagate_score_up(new_treelabel(data, tree, tree_root = tree_root), overwrite = FALSE)
-}
-
+#' @importFrom rlang `%||%`
 #' @export
 #' @rdname treelabel
 treelabel.list <- function(x, tree, tree_root = "root", ...){
@@ -57,21 +36,19 @@ treelabel.list <- function(x, tree, tree_root = "root", ...){
   }))
   vals <- unname(unlist(x))
   ids <- rep(seq_along(x), times = lengths(x))
-  treelabel(data.frame(id = ids, label = names, score = vals),
-            tree = tree, tree_root = tree_root, ...)
+  .treelabel_from_id_label_score(ids, names, vals, tree = tree, tree_root = tree_root, ...)
 }
 
 #' @export
 #' @rdname treelabel
 treelabel.numeric <- function(x, tree, tree_root = "root", ...){
-  treelabel(data.frame(id =  seq_along(x), label = names(x), score = unname(x)),
-            tree = tree, tree_root = tree_root, ...)
+  .treelabel_from_id_label_score(seq_along(x), names(x), unname(x), tree = tree, tree_root = tree_root, ...)
 }
 
 #' @export
 #' @rdname treelabel
 treelabel.logical <- function(x, tree, tree_root = "root", ...){
-  treelabel(data.frame(id =  seq_along(x), label = names(x), score = unname(x)),
+  res <- .treelabel_from_id_label_score(seq_along(x), names(x), unname(x), tree = tree, tree_root = tree_root, ...)
   res |>
     tl_replace_NAs() |>
     tl_as_logical()
@@ -84,8 +61,6 @@ treelabel.character <- function(x, tree, tree_root = "root", ...){
   res |>
     tl_replace_NAs() |>
     tl_as_logical()
-  vctrs::field(res, "data") <- mat != 0
-  res
 }
 
 #' @export
@@ -101,8 +76,34 @@ treelabel.missing <- function(x, tree, tree_root = "root", ...){
 }
 
 .treelabel_like <- function(data, like){
-  new_treelabel(data, attr(like, "tree"), tree_root = attr(like, "tree_root"),
-                distances = attr(like, "distances"))
+  new_treelabel(data, .get_tree(like), tree_root = .get_tree_root(like),
+                distances = .get_distances(like))
+}
+
+.treelabel_from_id_label_score <- function(ids, labels, scores, tree, tree_root = "root", ...){
+  stopifnot(igraph::is_tree(tree))
+  vertex_names <- .tree_vertex_names(tree)
+
+
+  uniq_names <- setdiff(unique(labels), c(NA, ""))
+  if(! all(uniq_names %in% vertex_names)){
+    stop(toString(paste0("'", uniq_names[which(! uniq_names %in% vertex_names)], "'"), width = 40), " not in tree")
+  }
+
+  empty_label_pos <- which(labels == "")
+  na_score_pos <- which(is.na(scores))
+  if(length(setdiff(empty_label_pos, na_score_pos)) > 0){
+    stop("The labels contain an empty string at pos ", toString(setdiff(empty_label_pos, na_score_pos), width = 40),
+         ", but the corresponding score is not 'NA'.")
+  }
+
+  ids <- as.factor(ids)
+  data <- matrix(NA, nrow = nlevels(ids), ncol = length(vertex_names),
+                 dimnames = list(NULL, vertex_names))
+  data <- .assign_to_matrix(data, labels = labels, ids = ids, scores = scores)
+  res <- new_treelabel(data, tree, tree_root = tree_root, ...)
+  res <- .propagate_score_up(res, overwrite = FALSE)
+  res
 }
 
 new_treelabel <- function(data, tree, tree_root = "root", distances = NULL){
