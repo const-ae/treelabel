@@ -12,7 +12,7 @@ tl_set_score <- function(x, label, score,
 
   new_data <- .assign_to_matrix(tl_score_matrix(x), ids = seq_along(x),
                                 labels = label, scores = score)
-  res <- new_treelabel(new_data, attr(x, "tree"))
+  res <- new_treelabel(new_data, .get_tree(x))
   if(propagate_values_up){
     res <- .propagate_score_up(res, overwrite = TRUE)
   }

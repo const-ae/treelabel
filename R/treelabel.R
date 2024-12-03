@@ -153,4 +153,16 @@ is_treelabel <- function(x){
 }
 
 
+# Get attributes in a consistent way
+.get_tree <- function(x){
+  attr(x, "tree")
+}
+
+.get_tree_root <- function(x){
+  attr(x, "tree_root")
+}
+
+.get_distances <- function(x){
+  attr(x, "distances")
+}
 

@@ -20,7 +20,7 @@ format.treelabel <- function(x, ...){
 #' @importFrom vctrs obj_print_footer
 #' @export
 obj_print_footer.treelabel <- function(x, ...){
-  vertex_names <- .tree_vertex_names(attr(x, "tree"))
+  vertex_names <- .tree_vertex_names(.get_tree(x))
   cat("# Tree: ", toString(vertex_names, width = 40), "\n", sep = "")
 }
 

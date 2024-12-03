@@ -12,8 +12,8 @@
 tl_name <- function(x, threshold = 0){
   data <- tl_score_matrix(x)
   colnames <- colnames(data)
-  dist <- attr(x, "distances")
-  .select_passing_score_by_level(data, threshold = threshold, label = colnames, dist = dist)
+  dists <- .get_distances(x)
+  .select_passing_score_by_level(data, threshold = threshold, label = colnames, dist = dists)
 }
 
 

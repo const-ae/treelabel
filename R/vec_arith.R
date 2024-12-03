@@ -28,7 +28,7 @@ vec_arith.treelabel.default <- function(op, x, y, ...){
 #' @export
 #' @method vec_arith.treelabel treelabel
 vec_arith.treelabel.treelabel <- function(op, x, y, ...){
-  stopifnot(igraph::identical_graphs(attr(x, "tree"), attr(y, "tree")))
+  stopifnot(igraph::identical_graphs(.get_tree(x), .get_tree(y)))
 
   op_fn <- getExportedValue("base", op)
   args <- vctrs::vec_recycle_common(x, y)

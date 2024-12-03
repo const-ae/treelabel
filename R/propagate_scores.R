@@ -9,8 +9,8 @@
 .propagate_score_up <- function(x, overwrite = FALSE){
   data <- tl_score_matrix(x)
   colnames <- colnames(data)
-  tree <- attr(x, "tree")
-  dists <- attr(x, "distances")
+  tree <- .get_tree(x)
+  dists <- .get_distances(x)
   children <- lapply(igraph::V(tree), \(v){
     match(igraph::neighbors(tree, v, mode = "out")$name, colnames)
   })
@@ -32,8 +32,8 @@
 .propagate_NAs_down <- function(x){
   data <- tl_score_matrix(x)
   colnames <- colnames(data)
-  tree <- attr(x, "tree")
-  dists <- attr(x, "distances")
+  tree <- .get_tree(x)
+  dists <- .get_distances(x)
   children <- lapply(igraph::V(tree), \(v){
     match(igraph::neighbors(tree, v, mode = "out")$name, colnames)
   })
