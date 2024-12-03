@@ -48,7 +48,13 @@ treelabel.data.frame <- function(x, tree, tree_root = "root", id = "id", label =
 #' @export
 #' @rdname treelabel
 treelabel.list <- function(x, tree, tree_root = "root", ...){
-  names <- unlist(lapply(x, names))
+  names <- unlist(lapply(x, \(.x){
+    if(is.null(.x)){
+      NULL
+    }else{
+      names(.x) %||% rlang::rep_along(.x, NA)
+    }
+  }))
   vals <- unname(unlist(x))
   ids <- rep(seq_along(x), times = lengths(x))
   treelabel(data.frame(id = ids, label = names, score = vals),
@@ -103,6 +109,12 @@ new_treelabel <- function(data, tree, tree_root = "root", distances = NULL){
   if(! inherits(data, "matrix")){
     stop("'data' must be a matrix")
   }
+
+  if(! tree_root %in% .tree_vertex_names(tree)){
+    stop("'tree_root=", tree_root, "' is not in vertices.")
+  }
+  tree <- .make_tree(tree, root = tree_root)
+
   vertex_names <- .tree_vertex_names(tree)
   if(! all(colnames(data) %in% vertex_names) &&
      all(vertex_names %in% colnames(data))){
@@ -115,12 +127,13 @@ new_treelabel <- function(data, tree, tree_root = "root", distances = NULL){
     distances <- igraph::distances(tree, v = tree_root, mode = "out")
     data <- data[,vertex_names[order(distances)],drop=FALSE]
     distances <- sort(distances)
+  }else{
+    stopifnot(! is.unsorted(distances))
   }
-
   vctrs::new_rcrd(
     list(data = data),
     tree = tree,
-    root = tree_root,
+    tree_root = tree_root,
     distances = distances,
     class = "treelabel"
   )
@@ -146,7 +159,7 @@ is_treelabel <- function(x){
 
   assign_df <- tibble::tibble(
     col_zi = match(labels, colnames(data)) - 1,
-    row_zi = match(ids, levels(ids)) - 1,
+    row_zi = match(ids, unique(ids)) - 1,
     val = scores
   )
   assign_df <- assign_df[! is.na(assign_df$col_zi),]

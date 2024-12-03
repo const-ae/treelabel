@@ -17,8 +17,8 @@
   for(idx in order(dists, decreasing = TRUE)){
     child_sum <- matrixStats::rowSums2(data, cols = children[[idx]], na.rm=TRUE)
     na_count <- matrixStats::rowCounts(data, value = NA_real_, cols = children[[idx]], na.rm=TRUE)
-    child_sum[na_count == length(children[[idx]])] <- NA
-    cur_val <- data[,names(children)[idx]]
+    child_sum[na_count == length(children[[idx]])] <- NA_real_
+    cur_val <- as.numeric(data[,names(children)[idx]])
     if(overwrite){
       data[,names(children)[idx]] <- ifelse(is.na(cur_val), child_sum, pmax(cur_val, child_sum))
     }else{
