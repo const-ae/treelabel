@@ -10,6 +10,7 @@
 #' @returns a `data.frame` with one row per unique `id` and two columns:
 #'   The first is a vector of the ids and the second is the `treelabel` vector.
 #'
+#' @export
 treelabel_from_dataframe <- function(x, tree, tree_root = "root", id = "id", label = "label", score = "score", name = "treelabel", ...){
   stopifnot(igraph::is_tree(tree))
   stopifnot(is.character(id) && length(id) == 1)
