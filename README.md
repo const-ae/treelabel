@@ -286,3 +286,42 @@ df |>
 #> 6     6   myeloid cell(1.00) dendritic cell       0
 #> 7     7 dendritic cell(1.00) dendritic cell       0
 ```
+
+# Session Info
+
+``` r
+sessionInfo()
+#> R version 4.4.1 (2024-06-14)
+#> Platform: aarch64-apple-darwin20
+#> Running under: macOS Sonoma 14.6
+#> 
+#> Matrix products: default
+#> BLAS:   /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRblas.0.dylib 
+#> LAPACK: /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.0
+#> 
+#> locale:
+#> [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+#> 
+#> time zone: Europe/London
+#> tzcode source: internal
+#> 
+#> attached base packages:
+#> [1] stats     graphics  grDevices utils     datasets  methods   base     
+#> 
+#> other attached packages:
+#>  [1] lubridate_1.9.3 forcats_1.0.0   stringr_1.5.1   dplyr_1.1.4    
+#>  [5] purrr_1.0.2     readr_2.1.5     tidyr_1.3.1     tibble_3.2.1   
+#>  [9] ggplot2_3.5.1   tidyverse_2.0.0 treelabel_0.0.2
+#> 
+#> loaded via a namespace (and not attached):
+#>  [1] gtable_0.3.6      crayon_1.5.3      compiler_4.4.1    tidyselect_1.2.1 
+#>  [5] scales_1.3.0      yaml_2.3.10       fastmap_1.2.0     R6_2.5.1         
+#>  [9] generics_0.1.3    igraph_2.1.1      knitr_1.49        munsell_0.5.1    
+#> [13] pillar_1.9.0      tzdb_0.4.0        rlang_1.1.4       utf8_1.2.4       
+#> [17] stringi_1.8.4     xfun_0.49         timechange_0.3.0  cli_3.6.3        
+#> [21] withr_3.0.2       magrittr_2.0.3    digest_0.6.37     grid_4.4.1       
+#> [25] rstudioapi_0.17.1 hms_1.1.3         lifecycle_1.0.4   vctrs_0.6.5      
+#> [29] evaluate_1.0.1    glue_1.8.0        fansi_1.0.6       colorspace_2.1-1 
+#> [33] rmarkdown_2.29    matrixStats_1.4.1 tools_4.4.1       pkgconfig_2.0.3  
+#> [37] htmltools_0.5.8.1
+```

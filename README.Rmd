@@ -180,4 +180,10 @@ df |>
 ```
 
 
+# Session Info
+
+```{r}
+sessionInfo()
+```
+
 
