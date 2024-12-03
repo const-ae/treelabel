@@ -21,3 +21,47 @@ tl_set_score <- function(x, label, score,
   }
   res
 }
+
+#' Replace `NA`s with zeros
+#'
+#' Replaces all `NA`s except in score matrix with zeros, except for the
+#' "root" column. This function is useful for comparing values.#'
+#'
+#' @param x `treelabel` vector
+#'
+#'
+#'
+#' @export
+tl_replace_NAs <- function(x){
+  stopifnot(is_treelabel(x))
+
+  mat <- tl_score_matrix(x)
+  root_col <- mat[,1,drop=FALSE]
+  rest_cols <- mat[,-1,drop=FALSE]
+  rest_cols[is.na(rest_cols)] <- 0
+  rest_cols[is.na(root_col), ] <- NA
+  .treelabel_like(cbind(root_col, rest_cols), x)
+}
+
+#' Convert the underlying data-representation from logical to numeric
+#'
+#' @param x `treelabel` vector
+#'
+#' @export
+tl_as_logical <- function(x){
+  stopifnot(is_treelabel(x))
+  mat <- tl_score_matrix(x)
+  new_mat <- as.logical(mat)
+  attributes(new_mat) <- attributes(mat)
+  .treelabel_like(new_mat, x)
+}
+
+#' @export
+#' @rdname tl_as_logical
+tl_as_numeric <- function(x){
+  stopifnot(is_treelabel(x))
+  mat <- tl_score_matrix(x)
+  new_mat <- as.numeric(mat)
+  attributes(new_mat) <- attributes(mat)
+  .treelabel_like(new_mat, x)
+}
