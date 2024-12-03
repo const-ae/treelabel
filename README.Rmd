@@ -45,20 +45,139 @@ plot(tree, layout = igraph::layout_as_tree(tree, root = "Animal"),
 ```
 
 
+If you provide a character vector and a tree defining the hierarchy, you get a `treelabel` vector that is backed by a matrix of `TRUE` / `FALSE` values indicating the logical relationships.
+
 ```{r}
 library(treelabel)
-vec <- treelabel(c("Ara", "Eagle", "Cat", "Ara", "Poodle", "Cat", "Cat"), tree = tree, tree_root = "Animal")
+vec <- treelabel(c("Ara", "Eagle", "Cat", NA, "Ara", "Poodle", "Cat", "Cat"), tree = tree, tree_root = "Animal")
 vec
-
-tl_eval(vec, Eagle)
-elem <- treelabel("Ara", tree = tree, tree_root = "Animal")
-vctrs::field(elem, "data") <- tl_score_matrix(elem) %|% matrix(rep(0, 11), nrow = 1)
-vctrs::field(vec[1], "data") <- tl_score_matrix(elem) %|% matrix(rep(0, 11), nrow = 1)
-elem == "Eagle"
-
-
-vctrs::vec_compare(vec, treelabel("Ara", tree = tree, tree_root = "Animal"), na_equal = TRUE)
-vctrs::vec_proxy_equal(vec, treelabel("Ara", tree = tree, tree_root = "Animal"))
 ```
+
+The underlying matrix:
+```{r}
+tl_score_matrix(vec)
+```
+
+
+You can test if an element is of a specific type with the `tl_get` function.
+
+```{r}
+# Is the element an eagle?
+tl_get(vec, "Eagle")
+
+# Is the element a bird?
+tl_get(vec, "Bird")
+```
+
+
+You can also express uncertainty about any particular label
+
+```{r}
+vec2 <- treelabel(list(
+  c(Dog = 1, Poodle = 0.8, Retriever = 0.2),
+  c(Cat = 0.9),
+  c(Animal = 0.78)
+), tree, tree_root = "Animal")
+
+treelabel(tree = tree, tree_root = "Animal")
+
+vec2
+```
+
+Concatenation
+
+```{r}
+c(tl_as_numeric(vec), vec2)
+
+# c("Eagle", vec)
+c(vec, "Eagle")
+```
+
+
+
+```{r, paged.print=FALSE}
+library(tidyverse)
+tibble(id = seq_len(8), vec) |>
+  filter(tl_eval(vec, Bird))
+
+
+
+```
+
+# Cell type scores
+
+```{r}
+edges <- c("root", "immune cell",
+           "root", "epithelial cell",
+           "immune cell", "myeloid cell",
+           "immune cell", "lymphoid cell",
+           "lymphoid cell", "t cell",
+           "lymphoid cell", "b cell",
+           "t cell", "CD4 t cell",
+           "t cell", "CD8 t cell",
+           "t cell", "treg cell",
+           "myeloid cell", "neutrophil",
+           "myeloid cell", "dendritic cell",
+           "myeloid cell", "macrophage")
+
+g <- igraph::graph(edges, directed = TRUE)
+plot(g, layout = igraph::layout_as_tree(g, root = "root"))
+```
+
+
+```{r}
+label_list <- list(c("immune cell" = 1, "lymphoid cell" = 0.99, "b cell" = 0.7),
+     c("immune cell" = 1, "lymphoid cell" = 0.99, "t cell" = 0.6, "b cell" = 0.3, "CD4 t cell" = 0.59),
+     c("immune cell" = 1, "lymphoid cell" = 0.99, "t cell" = 0.6, "b cell" = 0.3, "CD4 t cell" = 0.59),
+     c("immune cell" = 1, "lymphoid cell" = 0.99, "t cell" = 0.6, "b cell" = 0.2, "CD8 t cell" = 0.59),
+     c("immune cell" = 1, "lymphoid cell" = 0.99, "t cell" = 0.89, "b cell" = 0.1, "CD4 t cell" = 0.89),
+     c("myeloid cell" = 1),
+     c("myeloid cell" = 1, "dendritic cell" = 1))
+labels1 <- treelabel(label_list, tree = g)
+
+labels1
+```
+
+
+Arithmetics
+
+```{r}
+mean(labels1, na.rm=TRUE) |> tl_score_matrix()
+```
+
+
+```{r, paged.print=FALSE}
+df <- tibble(id = seq_along(labels1), label1 = labels1) 
+df |>
+  mutate(new_score = tl_eval(label1, log(`t cell` + 17)))
+```
+
+```{r}
+labels1
+tl_score_matrix(labels1)
+```
+
+
+
+```{r, paged.print=FALSE}
+labels2 <- treelabel(c("b cell", "CD4 t cell", "CD4 t cell", "dendritic cell", "CD4 t cell", "dendritic cell", "dendritic cell"), g, "root")
+
+df <- tibble(id = seq_along(labels1), 
+             label1 = labels1, 
+             label2 = labels2)
+df
+# sum(df$label2) |> tl_score_matrix()
+
+df |>
+  mutate(new = tl_mean_across(starts_with("label"), `CD4 t cell` > 0.8) )
+
+df |>
+  filter(tl_if_all(starts_with("label"), `t cell` > 0.3))
+
+df |>
+  mutate(n_tcell = tl_sum_across(starts_with("label"), `t cell` > 0.3))
+
+```
+
 
 

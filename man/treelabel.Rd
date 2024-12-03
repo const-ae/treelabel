@@ -3,7 +3,6 @@
 \name{treelabel}
 \alias{treelabel}
 \alias{treelabel.matrix}
-\alias{treelabel.data.frame}
 \alias{treelabel.list}
 \alias{treelabel.numeric}
 \alias{treelabel.logical}
@@ -15,16 +14,6 @@
 treelabel(x, tree, tree_root = "root", ...)
 
 \method{treelabel}{matrix}(x, tree, tree_root = "root", ...)
-
-\method{treelabel}{data.frame}(
-  x,
-  tree,
-  tree_root = "root",
-  id = "id",
-  label = "label",
-  score = "score",
-  ...
-)
 
 \method{treelabel}{list}(x, tree, tree_root = "root", ...)
 
@@ -47,9 +36,6 @@ of the labels. Must satisfy \code{igraph::is_tree}. (_)}
 \item{tree_root}{the name of the root of the tree. Default: \code{"root"}.}
 
 \item{...}{additional arguments. Provided for compatability.}
-
-\item{id, label, score}{strings that specify the names of the respective
-columns in the \code{treelabel.data.frame} constructor.}
 }
 \description{
 Make a tree label vector
