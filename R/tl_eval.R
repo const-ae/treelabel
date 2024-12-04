@@ -36,3 +36,18 @@ tl_get <- function(x, name){
   col <- match(name, colnames(data)) - 1
   data[col * nrow(data) + seq_len(nrow(data)) - 1 + 1]
 }
+
+#'
+#' @rdname tl_eval
+#' @export
+tl_is <- function(x, expr, ...){
+  A <- tl_eval(x, {{expr}}, ...)
+  stopifnot(rlang::is_logical(A))
+  B <- tl_eval(tl_atmost(x), {{expr}}, ...)
+  stopifnot(rlang::is_logical(B))
+  # This takes A if A is not NA.
+  # If is.na(A) the result is FALSE if B is FALSE,
+  # otherwise it is NA.
+  A %|% (A & B)
+}
+
