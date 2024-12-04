@@ -30,6 +30,9 @@ tl_set_score <- function(x, label, score,
 #'
 #' @param x `treelabel` vector
 #'
+#' @returns the modified `treelabel` vector
+#'
+#' @export
 tl_atmost <- function(x){
   data <- tl_score_matrix(x)
   colnames <- colnames(data)

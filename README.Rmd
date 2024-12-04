@@ -99,10 +99,8 @@ c(vec, "Eagle")
 library(tidyverse)
 tibble(id = seq_len(8), vec) |>
   filter(tl_eval(vec, Bird))
-
-
-
 ```
+
 
 # Cell type scores
 
@@ -142,42 +140,56 @@ labels1
 Arithmetics
 
 ```{r}
-mean(labels1, na.rm=TRUE) |> tl_score_matrix()
+mean_lab <- mean(labels1, na.rm=TRUE)
+mean_lab
+tl_score_matrix(mean_lab)
 ```
 
 
 ```{r, paged.print=FALSE}
-df <- tibble(id = seq_along(labels1), label1 = labels1) 
-df |>
+tibble(id = seq_along(labels1), label1 = labels1) |>
   mutate(new_score = tl_eval(label1, log(`t cell` + 17)))
 ```
 
-```{r}
-labels1
-tl_score_matrix(labels1)
-```
-
-
 
 ```{r, paged.print=FALSE}
-labels2 <- treelabel(c("b cell", "CD4 t cell", "CD4 t cell", "dendritic cell", "CD4 t cell", "dendritic cell", "dendritic cell"), g, "root")
+labels2 <- treelabel(c("t cell", "CD4 t cell", "CD4 t cell", "dendritic cell", "CD4 t cell", "dendritic cell", "dendritic cell"), g, "root")
 
 df <- tibble(id = seq_along(labels1), 
              label1 = labels1, 
              label2 = labels2)
 df
-# sum(df$label2) |> tl_score_matrix()
 
 df |>
-  mutate(new = tl_mean_across(starts_with("label"), `CD4 t cell` > 0.8) )
+  mutate(new = tl_mean_across(starts_with("label"), `CD4 t cell` > 0.2))
 
 df |>
-  filter(tl_if_all(starts_with("label"), `t cell` > 0.3))
+  filter(tl_if_all(starts_with("label"), `t cell` > 0.2))
 
 df |>
-  mutate(n_tcell = tl_sum_across(starts_with("label"), `t cell` > 0.3))
+  mutate(n_tcell = tl_count_across(starts_with("label"), `CD4 t cell` > 0.2),
+         frac_tcell = tl_fraction_across(starts_with("label"), `CD4 t cell` > 0.2),
+         mean_tcell = tl_mean_across(starts_with("label"), `CD4 t cell` > 0.2))
 
 ```
+
+
+```{r}
+label_list <- list(c("immune cell" = 1, "lymphoid cell" = 0.99, "b cell" = 0.7, "t cell" = 0.12),
+                   c("immune cell" = 1, "lymphoid cell" = 0.99, "b cell" = NA, "t cell" = 0.99, "CD4 t cell" = 0.8))
+lab3 <- treelabel(label_list, tree = g)
+lab3
+
+tl_eval(lab3, `CD4 t cell` > 0.6)
+tl_eval(lab3, `CD4 t cell` > 0.6) & tl_eval(lab3, `t cell` > 0.6)
+pmin(tl_eval(lab3, `CD4 t cell` > 0.6), tl_eval(lab3, `t cell` > 0.6), na.rm=TRUE)
+tl_eval(lab3, `t cell`)
+
+tl_score_matrix(lab3)
+tl_is(lab3, `CD4 t cell`)
+tl_is(labels1, `t cell` > 0.2)
+```
+
 
 
 # Session Info

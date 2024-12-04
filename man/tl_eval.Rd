@@ -2,9 +2,12 @@
 % Please edit documentation in R/tl_eval.R
 \name{tl_eval}
 \alias{tl_eval}
+\alias{tl_is}
 \title{Evaluate an expression in the tree label environment}
 \usage{
 tl_eval(x, expr, ...)
+
+tl_is(x, expr, ...)
 }
 \arguments{
 \item{x}{\code{treelabel} vector}

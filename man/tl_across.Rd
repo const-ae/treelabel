@@ -6,10 +6,12 @@
 \alias{tl_if_all}
 \alias{tl_sum_across}
 \alias{tl_mean_across}
+\alias{tl_count_across}
+\alias{tl_fraction_across}
 \alias{tl_countNAs_across}
 \title{dplyr-style across functions for treelabels}
 \usage{
-tl_across(.cols, expr)
+tl_across(.cols, expr, mode = c("logical", "numeric"))
 
 tl_if_any(.cols, expr)
 
@@ -19,6 +21,10 @@ tl_sum_across(.cols, expr, na.rm = TRUE)
 
 tl_mean_across(.cols, expr, na.rm = TRUE)
 
+tl_count_across(.cols, expr, na.rm = TRUE)
+
+tl_fraction_across(.cols, expr, na.rm = TRUE)
+
 tl_countNAs_across(.cols, expr, na.rm = TRUE)
 }
 \arguments{
@@ -26,6 +32,8 @@ tl_countNAs_across(.cols, expr, na.rm = TRUE)
 columns}
 
 \item{expr}{an unquoted expression evaluated with \code{tl_eval} for each column.}
+
+\item{mode}{the evaluation subtly differs if the results is numeric or logical}
 
 \item{na.rm}{boolean that decides if missing values are ignored.}
 }
