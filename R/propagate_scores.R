@@ -45,19 +45,6 @@
 }
 
 
-#'
-#'
-#' @export
-tl_cumsum_up <- function(x){
-  warning("Be careful about bubbling up the score twice")
-  .prepare_tree_traversal(x, \(data, nodes, children){
-    for(idx in rev(nodes)){
-      data[, idx] <- matrixStats::rowSums2(data, cols = c(idx, children[[idx]]), na.rm=TRUE)
-    }
-    .treelabel_like(data, like = x)
-  })
-}
-
 .propagate_NAs_down <- function(x){
   data <- tl_score_matrix(x)
   colnames <- colnames(data)
