@@ -6,28 +6,57 @@
 }
 
 #' @importFrom rlang `%|%`
-.propagate_score_up <- function(x, overwrite = FALSE){
+.propagate_score_up <- function(x, mode = c("sum", "cumsum", "none"), overwrite = FALSE){
+  mode <- rlang::arg_match(mode)
+  if(mode == "none"){
+    return(x)
+  }
   data <- tl_score_matrix(x)
   colnames <- colnames(data)
-  tree <- .get_tree(x)
+  children <- .get_children(x)
   dists <- .get_distances(x)
-  children <- lapply(igraph::V(tree), \(v){
-    match(igraph::neighbors(tree, v, mode = "out")$name, colnames)
-  })
+
   for(idx in order(dists, decreasing = TRUE)){
     child_sum <- matrixStats::rowSums2(data, cols = children[[idx]], na.rm=TRUE)
     na_count <- matrixStats::rowCounts(data, value = NA_real_, cols = children[[idx]], na.rm=TRUE)
     child_sum[na_count == length(children[[idx]])] <- NA_real_
-    cur_val <- as.numeric(data[,names(children)[idx]])
-    if(overwrite){
-      data[,names(children)[idx]] <- ifelse(is.na(cur_val), child_sum, pmax(cur_val, child_sum))
-    }else{
-      data[,names(children)[idx]] <- cur_val %|% child_sum
+    val <- as.numeric(data[,names(children)[idx]])
+    res <- rep(NA_real_, length(val))
+    v_is_na <- is.na(val)
+    c_is_na <- is.na(child_sum)
+
+    new_val <- if(mode == "sum" & overwrite){
+      child_sum
+    }else if(mode == "sum" & ! overwrite){
+      val %|% child_sum
+    }else if(mode == "cumsum"){
+      # new_val is only used if there are no NAs
+      val + child_sum
     }
+
+    res[  v_is_na &   c_is_na] <- NA
+    res[  v_is_na & ! c_is_na] <- child_sum[  v_is_na & ! c_is_na]
+    res[! v_is_na &   c_is_na] <- val[! v_is_na &   c_is_na]
+    res[! v_is_na & ! c_is_na] <- new_val[! v_is_na & ! c_is_na]
+
+    data[,names(children)[idx]] <- res
   }
   .treelabel_like(data, like = x)
 }
 
+
+#'
+#'
+#' @export
+tl_cumsum_up <- function(x){
+  warning("Be careful about bubbling up the score twice")
+  .prepare_tree_traversal(x, \(data, nodes, children){
+    for(idx in rev(nodes)){
+      data[, idx] <- matrixStats::rowSums2(data, cols = c(idx, children[[idx]]), na.rm=TRUE)
+    }
+    .treelabel_like(data, like = x)
+  })
+}
 
 .propagate_NAs_down <- function(x){
   data <- tl_score_matrix(x)

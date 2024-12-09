@@ -11,7 +11,8 @@
 #'   The first is a vector of the ids and the second is the `treelabel` vector.
 #'
 #' @export
-treelabel_from_dataframe <- function(x, tree, tree_root = "root", id = "id", label = "label", score = "score", name = "treelabel", ...){
+treelabel_from_dataframe <- function(x, tree, tree_root = "root", id = "id", label = "label", score = "score", name = "treelabel",
+                                     propagate_up = c("sum", "cumsum", "none"), ...){
   stopifnot(igraph::is_tree(tree))
   stopifnot(is.character(id) && length(id) == 1)
   stopifnot(is.character(label) && length(label) == 1)
@@ -38,7 +39,7 @@ treelabel_from_dataframe <- function(x, tree, tree_root = "root", id = "id", lab
   # data <- .assign_to_matrix(data, labels = x[[label]], ids = ids, scores = x[[score]])
   # res <- new_treelabel(data, tree, tree_root = tree_root, ...)
   # res <- .propagate_score_up(res, overwrite = FALSE)
-  res <- .treelabel_from_id_label_score(ids, x[[label]], x[[score]], tree = tree, tree_root = tree_root, ...)
+  res <- .treelabel_from_id_label_score(ids, x[[label]], x[[score]], tree = tree, tree_root = tree_root, propagate_up = propagate_up, ...)
   if(is.logical(x[[score]])){
     res <- res |>
       tl_replace_NAs() |>

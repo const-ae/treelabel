@@ -5,11 +5,19 @@
 #' @param tree `igraph` object that represents the hierarchical relationship
 #'   of the labels. Must satisfy `igraph::is_tree`. (_)
 #' @param tree_root the name of the root of the tree. Default: `"root"`.
+#' @param propagate_up mode how scores are propagated through the tree.
+#'  \describe{
+#'    \item{`"sum"`}{each node where the score is `NA` is replaced by the
+#'      sum of its children's scores}
+#'    \item{`"cumsum"`}{each node is replaced by the
+#'      sum of its children's scores plus its own score (where `NA` is treated as zero)}
+#'    \item{`"none"`}{No values other values in the tree structure are modified}
+#'   }
 #' @param ... additional arguments. Provided for compatability.
 #'
 #'
 #' @export
-treelabel <- function(x, tree,  tree_root = "root", ...){
+treelabel <- function(x, tree,  tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
   if(missing(x)){
     treelabel.missing(tree = tree, tree_root = tree_root, ...)
   }else{
@@ -19,14 +27,15 @@ treelabel <- function(x, tree,  tree_root = "root", ...){
 
 #' @export
 #' @rdname treelabel
-treelabel.matrix <- function(x, tree, tree_root = "root", ...){
-  .propagate_score_up(new_treelabel(x, tree, tree_root = tree_root, ...), overwrite = FALSE)
+treelabel.matrix <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+  res <- new_treelabel(x, tree, tree_root = tree_root, ...)
+  .propagate_score_up(res, mode = propagate_up, overwrite = FALSE)
 }
 
 #' @importFrom rlang `%||%`
 #' @export
 #' @rdname treelabel
-treelabel.list <- function(x, tree, tree_root = "root", ...){
+treelabel.list <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
   names <- unlist(lapply(x, \(.x){
     if(is.null(.x)){
       NULL
@@ -36,19 +45,19 @@ treelabel.list <- function(x, tree, tree_root = "root", ...){
   }))
   vals <- unname(unlist(x))
   ids <- rep(seq_along(x), times = lengths(x))
-  .treelabel_from_id_label_score(ids, names, vals, tree = tree, tree_root = tree_root, ...)
+  .treelabel_from_id_label_score(ids, names, vals, tree = tree, tree_root = tree_root, propagate_up = propagate_up, ...)
 }
 
 #' @export
 #' @rdname treelabel
-treelabel.numeric <- function(x, tree, tree_root = "root", ...){
-  .treelabel_from_id_label_score(seq_along(x), names(x), unname(x), tree = tree, tree_root = tree_root, ...)
+treelabel.numeric <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+  .treelabel_from_id_label_score(seq_along(x), names(x), unname(x), tree = tree, tree_root = tree_root, propagate_up = propagate_up, ...)
 }
 
 #' @export
 #' @rdname treelabel
-treelabel.logical <- function(x, tree, tree_root = "root", ...){
-  res <- .treelabel_from_id_label_score(seq_along(x), names(x), unname(x), tree = tree, tree_root = tree_root, ...)
+treelabel.logical <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+  res <- .treelabel_from_id_label_score(seq_along(x), names(x), unname(x), tree = tree, tree_root = tree_root, propagate_up = propagate_up, ...)
   res |>
     tl_replace_NAs() |>
     tl_as_logical()
@@ -56,8 +65,8 @@ treelabel.logical <- function(x, tree, tree_root = "root", ...){
 
 #' @export
 #' @rdname treelabel
-treelabel.character <- function(x, tree, tree_root = "root", ...){
-  res <- treelabel(rlang::rep_named(x, 1), tree = tree, tree_root = tree_root, ...)
+treelabel.character <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+  res <- treelabel(rlang::rep_named(x, 1), tree = tree, tree_root = tree_root, propagate_up = propagate_up, ...)
   res |>
     tl_replace_NAs() |>
     tl_as_logical()
@@ -65,14 +74,14 @@ treelabel.character <- function(x, tree, tree_root = "root", ...){
 
 #' @export
 #' @rdname treelabel
-treelabel.factor <- function(x, tree, tree_root = "root", ...){
-  treelabel(as.character(x), tree = tree, tree_root = tree_root, ...)
+treelabel.factor <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+  treelabel(as.character(x), tree = tree, tree_root = tree_root, propagate_up = propagate_up, ...)
 }
 
 #' @export
 #' @rdname treelabel
-treelabel.missing <- function(x, tree, tree_root = "root", ...){
-  treelabel(character(0L), tree, tree_root = tree_root)
+treelabel.missing <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+  treelabel(character(0L), tree, tree_root = tree_root, propagate_up = propagate_up)
 }
 
 .treelabel_like <- function(data, like){
@@ -80,7 +89,7 @@ treelabel.missing <- function(x, tree, tree_root = "root", ...){
                 distances = .get_distances(like))
 }
 
-.treelabel_from_id_label_score <- function(ids, labels, scores, tree, tree_root = "root", ...){
+.treelabel_from_id_label_score <- function(ids, labels, scores, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
   stopifnot(igraph::is_tree(tree))
   vertex_names <- .tree_vertex_names(tree)
 
@@ -102,7 +111,7 @@ treelabel.missing <- function(x, tree, tree_root = "root", ...){
                  dimnames = list(NULL, vertex_names))
   data <- .assign_to_matrix(data, labels = labels, ids = ids, scores = scores)
   res <- new_treelabel(data, tree, tree_root = tree_root, ...)
-  res <- .propagate_score_up(res, overwrite = FALSE)
+  res <- .propagate_score_up(res, mode = propagate_up, overwrite = FALSE)
   res
 }
 
@@ -180,5 +189,16 @@ is_treelabel <- function(x){
 
 .get_distances <- function(x){
   attr(x, "distances")
+}
+
+.get_children <- function(x){
+  tree <- .get_tree(x)
+  colnames <- colnames(tl_score_matrix(x))
+  children <- lapply(igraph::V(tree), \(v){
+    match(igraph::neighbors(tree, v, mode = "out")$name, colnames)
+  })
+  names(children) <- igraph::V(tree)$name
+  children <- children[colnames]
+  children
 }
 

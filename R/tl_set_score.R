@@ -2,7 +2,8 @@
 
 tl_set_score <- function(x, label, score,
                          propagate_NAs_down = TRUE,
-                         propagate_values_up = FALSE){
+                         propagate_score_up = c("sum", "cumsum", "none"),
+                         overwrite = TRUE){
   stopifnot(is_treelabel(x))
   label <- vctrs::vec_cast(label, "character")
 
@@ -12,10 +13,8 @@ tl_set_score <- function(x, label, score,
 
   new_data <- .assign_to_matrix(tl_score_matrix(x), ids = seq_along(x),
                                 labels = label, scores = score)
-  res <- new_treelabel(new_data, .get_tree(x))
-  if(propagate_values_up){
-    res <- .propagate_score_up(res, overwrite = TRUE)
-  }
+  res <- .treelabel_like(new_data, x)
+  res <- .propagate_score_up(res, mode = propagate_score_up, overwrite = overwrite)
   if(propagate_NAs_down){
     res <- .propagate_NAs_down(res)
   }

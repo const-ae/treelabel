@@ -85,5 +85,50 @@ test_that("treelabel_from_dataframe works", {
   expect_equal(dat3$output[4], treelabel("Parrot", tree, "Animal"), ignore_attr = "tree")
 })
 
+test_that("propagation works", {
+  tree <- igraph::graph_from_literal(
+    Animal - Bird : Mammal,
+    Bird - Parrot : Eagle,
+    Mammal - Dog : Cat
+  )
+
+  score_list <- list(
+    c(Eagle = 0.8, Parrot = 0.1),
+    c(Eagle = 0.8, Parrot = 0.1, Bird = 0.1)
+  )
+  vec1 <- treelabel(score_list, tree = tree, tree_root = "Animal", propagate_up = "none")
+  vec2 <- treelabel(score_list, tree = tree, tree_root = "Animal", propagate_up = "sum")
+  vec3 <- treelabel(score_list, tree = tree, tree_root = "Animal", propagate_up = "cumsum")
+
+  ref <- array(c(NA, NA, NA, 0.1, NA, NA, 0.1, 0.1, 0.8, 0.8, NA, NA, NA, NA),
+                dim = c(2L, 7L), dimnames = list(NULL, c("Animal", "Bird", "Mammal", "Parrot", "Eagle", "Dog", "Cat")))
+  expect_equal(tl_score_matrix(vec1), ref)
+
+  ref[1,"Bird"] <- 0.9
+  ref[1,"Animal"] <- 0.9
+  ref[2,"Animal"] <- 0.1
+  expect_equal(tl_score_matrix(vec2), ref)
+
+  ref[2,"Bird"] <- 1.0
+  ref[2,"Animal"] <- 1.0
+  expect_equal(tl_score_matrix(vec3), ref)
+})
+
+
+test_that("propagation works", {
+  tree <- igraph::graph_from_literal(
+    Animal - Bird : Mammal,
+    Bird - Parrot : Eagle,
+    Mammal - Dog : Cat
+  )
+
+  res <- replicate(20, {
+    treelabel(sample(igraph::V(tree)$name, size = 100, replace = TRUE), tree, "Animal")
+  })
+
+  lapply(res, \(x) colnames(tl_score_matrix(x)))[1:5]
+  lapply(res, \(x) .get_distances(x))[1:5]
+})
+
 
 

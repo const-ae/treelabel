@@ -24,5 +24,4 @@ test_that("casting works", {
 
   expect_equal(vctrs::vec_c("Eagle", vec1), treelabel(c("Eagle", "Bird"), tree = tree, tree_root = "Animal"), ignore_attr = "tree")
   expect_equal(vctrs::vec_c(NA, vec1), treelabel(c(NA, "Bird"), tree = tree, tree_root = "Animal"), ignore_attr = "tree")
-
 })

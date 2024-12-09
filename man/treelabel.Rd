@@ -11,21 +11,69 @@
 \alias{treelabel.missing}
 \title{Make a tree label vector}
 \usage{
-treelabel(x, tree, tree_root = "root", ...)
+treelabel(
+  x,
+  tree,
+  tree_root = "root",
+  propagate_up = c("sum", "cumsum", "none"),
+  ...
+)
 
-\method{treelabel}{matrix}(x, tree, tree_root = "root", ...)
+\method{treelabel}{matrix}(
+  x,
+  tree,
+  tree_root = "root",
+  propagate_up = c("sum", "cumsum", "none"),
+  ...
+)
 
-\method{treelabel}{list}(x, tree, tree_root = "root", ...)
+\method{treelabel}{list}(
+  x,
+  tree,
+  tree_root = "root",
+  propagate_up = c("sum", "cumsum", "none"),
+  ...
+)
 
-\method{treelabel}{numeric}(x, tree, tree_root = "root", ...)
+\method{treelabel}{numeric}(
+  x,
+  tree,
+  tree_root = "root",
+  propagate_up = c("sum", "cumsum", "none"),
+  ...
+)
 
-\method{treelabel}{logical}(x, tree, tree_root = "root", ...)
+\method{treelabel}{logical}(
+  x,
+  tree,
+  tree_root = "root",
+  propagate_up = c("sum", "cumsum", "none"),
+  ...
+)
 
-\method{treelabel}{character}(x, tree, tree_root = "root", ...)
+\method{treelabel}{character}(
+  x,
+  tree,
+  tree_root = "root",
+  propagate_up = c("sum", "cumsum", "none"),
+  ...
+)
 
-\method{treelabel}{factor}(x, tree, tree_root = "root", ...)
+\method{treelabel}{factor}(
+  x,
+  tree,
+  tree_root = "root",
+  propagate_up = c("sum", "cumsum", "none"),
+  ...
+)
 
-\method{treelabel}{missing}(x, tree, tree_root = "root", ...)
+\method{treelabel}{missing}(
+  x,
+  tree,
+  tree_root = "root",
+  propagate_up = c("sum", "cumsum", "none"),
+  ...
+)
 }
 \arguments{
 \item{x}{object that is converted to a \code{treelabel}}
@@ -34,6 +82,15 @@ treelabel(x, tree, tree_root = "root", ...)
 of the labels. Must satisfy \code{igraph::is_tree}. (_)}
 
 \item{tree_root}{the name of the root of the tree. Default: \code{"root"}.}
+
+\item{propagate_up}{mode how scores are propagated through the tree.
+\describe{
+\item{\code{"sum"}}{each node where the score is \code{NA} is replaced by the
+sum of the children scores}
+\item{\code{"cumsum"}}{each node is replaced by the
+sum of the children scores plus its own score (where \code{NA} is treated as zero)}
+\item{\code{"none"}}{No values other values in the tree structure are modified}
+}}
 
 \item{...}{additional arguments. Provided for compatability.}
 }
