@@ -44,16 +44,17 @@ tl_atleast <- function(x){
 #' @rdname tl_atleast
 #' @export
 tl_atmost <- function(x){
-  .prepare_tree_traversal(x, \(data, nodes, children){
-    for(idx in nodes){
-      max_remain <- pmax(0, data[,idx] - matrixStats::rowSums2(data, cols = children[[idx]], na.rm=TRUE))
-      for(child in children[[idx]]){
-        old_vals <- data[, child]
-        data[, child] <- old_vals %|% vctrs::vec_cast(max_remain, old_vals)
-      }
+  data <- tl_score_matrix(x)
+  children <- .get_children(x)
+  dists <- .get_distances(x)
+  for(idx in order(dists)){
+    max_remain <- pmax(0, data[,idx] - matrixStats::rowSums2(data, cols = children[[idx]], na.rm=TRUE))
+    for(child in children[[idx]]){
+      old_vals <- data[, child]
+      data[, child] <- old_vals %|% vctrs::vec_cast(max_remain, old_vals)
     }
-    .treelabel_like(data, like = x)
-  })
+  }
+  .treelabel_like(data, like = x)
 }
 
 
