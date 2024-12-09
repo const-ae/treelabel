@@ -2,12 +2,9 @@
 % Please edit documentation in R/tl_eval.R
 \name{tl_eval}
 \alias{tl_eval}
-\alias{tl_is}
 \title{Evaluate an expression in the tree label environment}
 \usage{
 tl_eval(x, expr, ...)
-
-tl_is(x, expr, ...)
 }
 \arguments{
 \item{x}{\code{treelabel} vector}
@@ -16,7 +13,10 @@ tl_is(x, expr, ...)
 environment. Can, for example, be used to check if a particular
 score is higher than a threshold}
 
-\item{...}{additional arguments passed on to \code{rlang::eval_tidy}}
+\item{...}{additional arguments passed on to \code{rlang::eval_tidy}
+
+\strong{Note}: Do not perform any stateful calculation in \code{expr} as it
+is evaluated multiple times}
 }
 \description{
 Evaluate an expression in the tree label environment
