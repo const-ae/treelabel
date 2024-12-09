@@ -22,33 +22,40 @@ tl_set_score <- function(x, label, score,
 }
 
 
+
+
 #' Replace each NA with the maximum value that it could have
 #'
-#' In pseudo-notation, this function calculates for any node `n` that is `NA`,
+#' `tl_atmost`: In pseudo-notation, this function calculates for any node `n` that is `NA`,
 #' `score = score(parent(n)) - sum(children(parent(n)), na.rm=TRUE)`.
+#'
+#' `tl_atleast`: In pseudo-notation, this function calculates for any node `n` that is `NA`,
+#' `score = 0`.
 #'
 #' @param x `treelabel` vector
 #'
 #' @returns the modified `treelabel` vector
 #'
 #' @export
-tl_atmost <- function(x){
-  data <- tl_score_matrix(x)
-  colnames <- colnames(data)
-  tree <- .get_tree(x)
-  dists <- .get_distances(x)
-  children <- lapply(igraph::V(tree), \(v){
-    match(igraph::neighbors(tree, v, mode = "out")$name, colnames)
-  })
-  for(idx in order(dists)){
-    max_remain <- pmax(0, data[,idx] - matrixStats::rowSums2(data, cols = children[[idx]], na.rm=TRUE))
-    for(child in children[[idx]]){
-      old_vals <- data[, child]
-      data[, child] <- old_vals %|% vctrs::vec_cast(max_remain, old_vals)
-    }
-  }
-  .treelabel_like(data, like = x)
+tl_atleast <- function(x){
+  tl_replace_NAs(x)
 }
+
+#' @rdname tl_atleast
+#' @export
+tl_atmost <- function(x){
+  .prepare_tree_traversal(x, \(data, nodes, children){
+    for(idx in nodes){
+      max_remain <- pmax(0, data[,idx] - matrixStats::rowSums2(data, cols = children[[idx]], na.rm=TRUE))
+      for(child in children[[idx]]){
+        old_vals <- data[, child]
+        data[, child] <- old_vals %|% vctrs::vec_cast(max_remain, old_vals)
+      }
+    }
+    .treelabel_like(data, like = x)
+  })
+}
+
 
 #' Replace `NA`s with zeros
 #'
