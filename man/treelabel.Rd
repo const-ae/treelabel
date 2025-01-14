@@ -86,9 +86,9 @@ of the labels. Must satisfy \code{igraph::is_tree}. (_)}
 \item{propagate_up}{mode how scores are propagated through the tree.
 \describe{
 \item{\code{"sum"}}{each node where the score is \code{NA} is replaced by the
-sum of the children scores}
+sum of its children's scores}
 \item{\code{"cumsum"}}{each node is replaced by the
-sum of the children scores plus its own score (where \code{NA} is treated as zero)}
+sum of its children's scores plus its own score (where \code{NA} is treated as zero)}
 \item{\code{"none"}}{No values other values in the tree structure are modified}
 }}
 

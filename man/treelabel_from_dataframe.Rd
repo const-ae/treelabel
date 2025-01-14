@@ -12,6 +12,7 @@ treelabel_from_dataframe(
   label = "label",
   score = "score",
   name = "treelabel",
+  propagate_up = c("sum", "cumsum", "none"),
   ...
 )
 }
