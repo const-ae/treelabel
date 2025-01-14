@@ -6,26 +6,20 @@
 \alias{tl_if_all}
 \alias{tl_sum_across}
 \alias{tl_mean_across}
-\alias{tl_count_across}
-\alias{tl_fraction_across}
 \alias{tl_countNAs_across}
 \title{dplyr-style across functions for treelabels}
 \usage{
-tl_across(.cols, expr, mode = c("logical", "numeric"))
+tl_across(.cols, expr, ...)
 
-tl_if_any(.cols, expr)
+tl_if_any(.cols, expr, ...)
 
-tl_if_all(.cols, expr)
+tl_if_all(.cols, expr, ...)
 
-tl_sum_across(.cols, expr, na.rm = TRUE)
+tl_sum_across(.cols, expr, ..., na.rm = TRUE)
 
-tl_mean_across(.cols, expr, na.rm = TRUE)
+tl_mean_across(.cols, expr, ..., na.rm = TRUE)
 
-tl_count_across(.cols, expr, na.rm = TRUE)
-
-tl_fraction_across(.cols, expr, na.rm = TRUE)
-
-tl_countNAs_across(.cols, expr, na.rm = TRUE)
+tl_countNAs_across(.cols, expr, ..., na.rm = TRUE)
 }
 \arguments{
 \item{.cols}{tidyselect expression of the column which contain the treelabel
@@ -33,12 +27,17 @@ columns}
 
 \item{expr}{an unquoted expression evaluated with \code{tl_eval} for each column.}
 
-\item{mode}{the evaluation subtly differs if the results is numeric or logical}
+\item{...}{addtional parameters passed on to \code{across}}
 
 \item{na.rm}{boolean that decides if missing values are ignored.}
 }
 \description{
-dplyr-style across functions for treelabels
+#' @export
+#' @rdname tl_across
+tl_fraction_across <- function(.cols, expr, ..., na.rm = TRUE){
+mat <- as.matrix(tl_across({{.cols}}, {{expr}}, ...))
+rowMeans(mat, na.rm = na.rm)
+}
 }
 \seealso{
 \code{\link[dplyr:across]{dplyr::across()}}
