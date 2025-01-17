@@ -24,4 +24,29 @@ test_that("casting works", {
 
   expect_equal(vctrs::vec_c("Eagle", vec1), treelabel(c("Eagle", "Bird"), tree = tree, tree_root = "Animal"), ignore_attr = "tree")
   expect_equal(vctrs::vec_c(NA, vec1), treelabel(c(NA, "Bird"), tree = tree, tree_root = "Animal"), ignore_attr = "tree")
+
+  skip("Combining a treelabel vector with numeric scores should be compatible with treelabel with logical scores")
+  vec3 <- treelabel(c(Dog = 0.5), tree = tree, tree_root = "Animal")
+  expect_equal(vctrs::vec_c(vec1, vec3),
+               treelabel(c("Bird" = 1, "Dog" = 0.5), tree = tree, tree_root = "Animal"), ignore_attr = "tree")
 })
+
+
+# test_that("coercion works", {
+#   tree <- igraph::graph_from_literal(
+#     Animal - Bird : Mammal,
+#     Bird - Parrot : Eagle,
+#     Mammal - Dog : Cat
+#   )
+#
+#   vec <- treelabel(c("Bird", "Dog", "Mammal"), tree, tree_root = "Animal")
+#   expect_equal(c(vec, "Dog"), treelabel(c("Bird", "Dog", "Mammal", "Dog"), tree, tree_root = "Animal"),
+#                ignore_attr = "tree")
+#
+#   vec <- treelabel(c("Bird" = 0.3, "Dog" = 0.7, "Mammal" = 1), tree, tree_root = "Animal")
+#   expect_equal(c(vec, "Dog"), treelabel(c("Bird", "Dog", "Mammal", "Dog"), tree, tree_root = "Animal"),
+#                ignore_attr = "tree")
+#
+# })
+
+
