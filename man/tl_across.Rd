@@ -32,12 +32,7 @@ columns}
 \item{na.rm}{boolean that decides if missing values are ignored.}
 }
 \description{
-#' @export
-#' @rdname tl_across
-tl_fraction_across <- function(.cols, expr, ..., na.rm = TRUE){
-mat <- as.matrix(tl_across({{.cols}}, {{expr}}, ...))
-rowMeans(mat, na.rm = na.rm)
-}
+dplyr-style across functions for treelabels
 }
 \seealso{
 \code{\link[dplyr:across]{dplyr::across()}}
