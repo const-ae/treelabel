@@ -31,7 +31,7 @@
 
 
 .igraph_as_undirected <- function(...){
-  if(packageVersion("igraph") < "2.1.0"){
+  if(utils::packageVersion("igraph") < "2.1.0"){
     igraph::as.undirected(...)
   }else{
     igraph::as_undirected(...)
