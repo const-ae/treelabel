@@ -5,6 +5,12 @@ vec_proxy_equal.treelabel <- function(x, ...){
   tibble::as_tibble(mat)
 }
 
+#' @importFrom vctrs vec_proxy_compare
+#' @export
+vec_proxy_compare.treelabel <- function(x, ...){
+  stop("'treelabel' does not support relative comparisons (e.g., 'min', 'max', '<', '>', 'pmin', ...)")
+}
+
 #' @importFrom vctrs vec_arith
 #' @export
 #' @method vec_arith treelabel
