@@ -26,14 +26,14 @@ vec_ptype2.character.treelabel <- function(x, y, ...){
 }
 
 #' @export
-vec_cast.treelabel.treelabel <- function(x, to, ..., x_arg = "", y_arg = ""){
+vec_cast.treelabel.treelabel <- function(x, to, ..., x_arg = "", to_arg = ""){
   stopifnot(igraph::identical_graphs(.get_tree(x), .get_tree(to)))
   stopifnot(.get_tree_root(x) == .get_tree_root(to))
   if(! igraph::identical_graphs(.get_tree(x), .get_tree(to))){
-    vctrs::stop_incompatible_cast(x, y, x_arg = x_arg, y_arg = y_arg, details = "tree of 'x' and 'to' is not identical")
+    vctrs::stop_incompatible_cast(x, to, x_arg = x_arg, y_arg = to_arg, details = "tree of 'x' and 'to' is not identical")
   }
   if(.get_tree_root(x) != .get_tree_root(to)){
-    vctrs::stop_incompatible_cast(x, y, x_arg = x_arg, y_arg = y_arg, details = "tree_root of 'x' and 'to' is not identical")
+    vctrs::stop_incompatible_cast(x, to, x_arg = x_arg, y_arg = to_arg, details = "tree_root of 'x' and 'to' is not identical")
   }
   x
 }
