@@ -36,16 +36,28 @@ treelabel.matrix <- function(x, tree, tree_root = "root", propagate_up = c("sum"
 #' @export
 #' @rdname treelabel
 treelabel.list <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
-  names <- unlist(lapply(x, \(.x){
+  # vctrs records currently do not support being named
+  x <- unname(x)
+  # Convert to list of numerics
+  x <- lapply(x, \(.x){
     if(is.null(.x)){
-      NULL
+      NA
+    }else if(rlang::is_character(.x)){
+      rlang::rep_named(.x, 1)
+    }else if(is.factor(.x)){
+      rlang::rep_named(as.character(.x), 1)
+    }else if(rlang::is_atomic(.x)){
+      .x
     }else{
-      names(.x) %||% rlang::rep_along(.x, NA)
+      stop("The content of the list must be atomic vectors (e.g., character, numerics or factors). Not a ", typeof(x))
     }
-  }))
-  vals <- unname(unlist(x))
+  })
+
+  names <- vctrs::list_unchop(lapply(x, \(.x) names(.x) %||% rlang::rep_along(.x, NA_character_) ))
+  vals <- unname(vctrs::list_unchop(x))
   ids <- rep(seq_along(x), times = lengths(x))
-  .treelabel_from_id_label_score(ids, names, vals, tree = tree, tree_root = tree_root, propagate_up = propagate_up, ...)
+  res <- .treelabel_from_id_label_score(ids, names, vals, tree = tree, tree_root = tree_root, propagate_up = propagate_up, ...)
+  res
 }
 
 #' @export
