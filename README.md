@@ -6,12 +6,81 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of treelabel is to allow storing labels which exist in a
+The goal of treelabel is to store and work with labels which exist in a
 hierarchical relationship.
+
+This is an alpha software release: feel free to play around with the
+code and please provide feedback, but expect breaking changes to the
+API!
+
+## Motivation
+
+![](man/figures/celltype_tree.png)
+
+I work on single-cell RNA-seq data wherre we have gene expression
+profiles for thousands of cells. A common first step is to annotate the
+*cell type* of each cell. These cell type can be given in varying
+granularity, classifying the cells broadly into *immune cells* or
+*epithelial cells*. Or these can be very detailed where you distinguish
+within the immune cells the *CD4 positive T regulatory cells* from the
+*CD4 positive T follicular helper cells*. Choosing the best annotation
+level can be difficult because one analysis may need broad categories
+whereas others require the highest possible resolution. The `treelabel`
+package provides an intuitive interface to store and work with these
+hierarchically related labels.
+
+Depending on the reference data, annotation method and exact parameters
+that you use for the cell typing, you often have multiple conflicting
+annotations. `treelabel` provides functions to build a consensus across
+different annotations and can integrate annotations that are designed
+for different resolution. Furthermore, `treelabel` supports uncertainty
+scores associated with a label. For example most automatic cell type
+scoring tools (like [Azimuth](https://azimuth.hubmapconsortium.org/) or
+[celltypist](https://www.celltypist.org/), return in addition to the
+cell type label, a confidence score. These allow more fine-grained
+selection of cells where you have a sufficient confidence that it is of
+a particular cell type.
+
+## What this package is. And what it is not,
+
+This package is purposefully kept generic and only makes the following
+assumptions:
+
+- Your labels have a tree-like relationship: that means the edges
+  between the labels are directed and there are no cycles.
+- The relation between a parent and a child can phrased as *is a*. For
+  example, a *`T cell` is a `Immune cell`*.
+- The scores can be logical or a non-negative number.
+
+This package does not provide any functionality to:
+
+- Assign cell types to cells based on the expression profile. Use any of
+  the many available automatic cell type scoring tools (see for
+  [this](https://github.com/seandavi/awesome-single-cell?tab=readme-ov-file#cell-type-identification-and-classification)
+  list for a selection) or do it manually using clustering plus marker
+  gene expression.
+- Automatically harmonize cell type labels from different reference
+  (e.g., figure out that the cells that are called `NK cells` in one
+  dataset are the same as the `Natural killer cells` from another
+  dataset). You will probably have to do this manually. There is an
+  example further down in the README.
+- Provide the optimal cell type tree. There are some examples in this
+  repository, but you will probably want to define it for your own
+  analysis depending on the annotations that you have. As a reference,
+  take a look at the [cell ontology
+  project](https://cell-ontology.github.io/), which provides a large
+  database of cell type label relationships and is used for example by
+  the Human Cell Atlas.
+- Plot trees. For demonstration purposes, we will use the `igraph` plots
+  (which are not very pretty) and for the plot on the top I used the
+  [D3](https://d3js.org/) library from Javascript (which is cumbersome
+  to use from R). Long-term I will probably want to develop some
+  additional tooling to improve this, but such code would probably live
+  outside this package.
 
 ## Installation
 
-You can install the development version of treelabel like so:
+You can install the development version of `treelabel` like this:
 
 ``` r
 devtools::install_github("const-ae/treelabel")
@@ -24,267 +93,340 @@ We begin by defining our label hierarchy using
 
 ``` r
 tree <- igraph::graph_from_literal(
-  Animal - Bird : Mammal,
-  Mammal - Cat : Dog,
-  Dog - Retriever : Poodle,
-  Bird - Parrot : Eagle,
-  Parrot - Ara  : Budgie
+  root - ImmuneCell : EndothelialCell : EpithelialCell,
+  ImmuneCell - TCell : BCell,
+  TCell - CD4_TCell : CD8_TCell
 )
-plot(tree, layout = igraph::layout_as_tree(tree, root = "Animal"),
-     vertex.size = 40, vertex.label.cex = 0.8)
+plot(tree, layout = igraph::layout_as_tree(tree, root = "root"),
+     vertex.size = 40, vertex.label.cex = 0.6)
 ```
 
-<img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
-
-If you provide a character vector and a tree defining the hierarchy, you
-get a `treelabel` vector that is backed by a matrix of `TRUE` / `FALSE`
-values indicating the logical relationships.
+<img src="man/figures/README-tree_plot-1.png" width="100%" />
 
 ``` r
 library(treelabel)
-vec <- treelabel(c("Ara", "Eagle", "Cat", NA, "Ara", "Poodle", "Cat", "Cat"), tree = tree, tree_root = "Animal")
-vec
-#> <treelabel[8]>
-#> [1] Ara    Eagle  Cat    <NA>   Ara    Poodle Cat    Cat   
-#> # Tree: Animal, Bird, Mammal, Parrot, Dog, E....
+# We will also load the tidyverse to demonstrate some functionality later
+library(tidyverse)
 ```
 
-The underlying matrix:
+### Constructors
+
+The easiest way to make a `treelabel` vector, is to make one from a
+character vector. You just call the `treelabel` contructor provide the
+labels and the reference `tree`
+
+``` r
+char_vec <- c("BCell", "EndothelialCell", "CD4_TCell", NA, "BCell", "EpithelialCell", "ImmuneCell")
+vec <- treelabel(char_vec, tree = tree)
+vec
+#> <treelabel[7]>
+#> [1] BCell           EndothelialCell CD4_TCell       <NA>           
+#> [5] BCell           EpithelialCell  ImmuneCell     
+#> # Tree: root, ImmuneCell, TCell, Endothelial....
+```
+
+If you have some uncertainty associated with each label, you can also
+use a named `numeric` vector to make a `treelabel` vector
+
+``` r
+num_vec <- c("BCell" = 0.99, "EndothelialCell" = 0.6, "CD4_TCell" = 0.8, NA, "BCell" = 0.78, "EpithelialCell" = 0.9, "ImmuneCell" = 0.4)
+vec <- treelabel(num_vec, tree = tree)
+vec
+#> <treelabel[7]>
+#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)      
+#> [4] <NA>                  BCell(0.78)           EpithelialCell(0.90) 
+#> [7] ImmuneCell(0.40)     
+#> # Tree: root, ImmuneCell, TCell, Endothelial....
+```
+
+Some tools provide you with a full set of confidence scores for each
+element. In this case you can provide a `list` or a `data.frame`
+
+``` r
+lst <- list(
+  c(BCell = 0.99, ImmuneCell = 1),
+  c(root = 1, EndothelialCell = 0.6),
+  c(CD4_TCell = 0.8, TCell = 0.95, ImmuneCell = 0.95),
+  NULL, # will be treated as NA
+  c(ImmuneCell = 0.4)
+)
+
+vec <- treelabel(lst, tree)
+vec
+#> <treelabel[5]>
+#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)      
+#> [4] <NA>                  ImmuneCell(0.40)     
+#> # Tree: root, ImmuneCell, TCell, Endothelial....
+```
+
+Lastly, you can take a tidy data frame and convert it to a treelabel.
+The `treelabel_from_dataframe` works differently from the other
+constructors, as it returns a `data.frame` with an ID column and a
+`treelabel` column. The reason why the function can not directly return
+a `treelabel` vector is that the order of the rows in the data.frame
+could be scrambled in which case it is unclear what cell the element in
+the treelabel belongs to.
+
+``` r
+df <- data.frame(
+  cell_id = c("cell 1", "cell 1", "cell 2", "cell 3", "cell 3", "cell 3"),
+  annot = c("BCell", "ImmuneCell", NA, "TCell", "CD4_TCell", "ImmuneCell"),
+  confidence = c(0.99, 1, NA, 0.95, 0.8, 0.95)
+)
+df <- treelabel_from_dataframe(df, tree, id = "cell_id", label = "annot", score = "confidence")
+df
+#>   cell_id       treelabel
+#> 1  cell 1     BCell(0.99)
+#> 2  cell 2            <NA>
+#> 3  cell 3 CD4_TCell(0.80)
+```
+
+### Working with the `treelabel` vector
+
+The `treelabel` vectors can be indexed or concatenated like any regular
+R vector:
+
+``` r
+vec
+#> <treelabel[5]>
+#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)      
+#> [4] <NA>                  ImmuneCell(0.40)     
+#> # Tree: root, ImmuneCell, TCell, Endothelial....
+length(vec)
+#> [1] 5
+vec[2]
+#> <treelabel[1]>
+#> [1] EndothelialCell(0.60)
+#> # Tree: root, ImmuneCell, TCell, Endothelial....
+vec[1:4]
+#> <treelabel[4]>
+#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)      
+#> [4] <NA>                 
+#> # Tree: root, ImmuneCell, TCell, Endothelial....
+c(vec, vec[1:3])
+#> <treelabel[8]>
+#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)      
+#> [4] <NA>                  ImmuneCell(0.40)      BCell(0.99)          
+#> [7] EndothelialCell(0.60) CD4_TCell(0.80)      
+#> # Tree: root, ImmuneCell, TCell, Endothelial....
+```
+
+It also automatically coerces strings or named vectors when
+concatenating.
+
+``` r
+# Actually this is not working yet.
+# c(vec, c(BCell = 1))
+```
+
+You can extract the tree from a `treelabel` and the root
+
+``` r
+tl_tree(vec)
+#> IGRAPH 46082d7 DN-- 8 7 -- 
+#> + attr: name (v/c)
+#> + edges from 46082d7 (vertex names):
+#> [1] root      ->ImmuneCell      root      ->EndothelialCell
+#> [3] root      ->EpithelialCell  ImmuneCell->TCell          
+#> [5] ImmuneCell->BCell           TCell     ->CD4_TCell      
+#> [7] TCell     ->CD8_TCell
+tl_tree_root(vec)
+#> [1] "root"
+```
+
+### Testing the identity
+
+The printing function builds on the `tl_name`, which returns the first
+non `NA` vertex with a score large than `0`. We can change this
+threshold. For example the *CD4_TCell* label does not pass the `0.9`
+threshold, but the *TCell* label does.
+
+``` r
+tibble(vec, tl_name(vec), tl_name(vec, threshold = 0.9))
+#> # A tibble: 5 × 3
+#>                     vec `tl_name(vec)`  `tl_name(vec, threshold = 0.9)`
+#>                    <tl> <chr>           <chr>                          
+#> 1           BCell(0.99) BCell           BCell                          
+#> 2 EndothelialCell(0.60) EndothelialCell root                           
+#> 3       CD4_TCell(0.80) CD4_TCell       TCell                          
+#> 4                    NA <NA>            <NA>                           
+#> 5      ImmuneCell(0.40) ImmuneCell      <NA>
+```
+
+You can also evaluate logical expressions using `tl_eval`.
+
+``` r
+tibble(vec) |> mutate(is_tcell = tl_eval(vec, TCell > 0.9))
+#> # A tibble: 5 × 2
+#>                     vec is_tcell
+#>                    <tl> <lgl>   
+#> 1           BCell(0.99) FALSE   
+#> 2 EndothelialCell(0.60) FALSE   
+#> 3       CD4_TCell(0.80) TRUE    
+#> 4                    NA NA      
+#> 5      ImmuneCell(0.40) FALSE
+```
+
+`treelabel` is clever about evaluating these expressions. If for example
+we ask if the cell might be a T cell (i.e., `TCell > 0.2`), the second
+and fifth entry switch from `FALSE` to `NA`.
+
+``` r
+tibble(vec) |> mutate(maybe_tcell = tl_eval(vec, TCell > 0.2))
+#> # A tibble: 5 × 2
+#>                     vec maybe_tcell
+#>                    <tl> <lgl>      
+#> 1           BCell(0.99) FALSE      
+#> 2 EndothelialCell(0.60) NA         
+#> 3       CD4_TCell(0.80) TRUE       
+#> 4                    NA NA         
+#> 5      ImmuneCell(0.40) NA
+```
+
+To understand why it is helpful to look at the way that `treelabel`
+internally stores the data. As you see each score that was not specified
+is kept as `NA`.
 
 ``` r
 tl_score_matrix(vec)
-#>      Animal  Bird Mammal Parrot   Dog Eagle   Cat   Ara Budgie Retriever Poodle
-#> [1,]   TRUE  TRUE  FALSE   TRUE FALSE FALSE FALSE  TRUE  FALSE     FALSE  FALSE
-#> [2,]   TRUE  TRUE  FALSE  FALSE FALSE  TRUE FALSE FALSE  FALSE     FALSE  FALSE
-#> [3,]   TRUE FALSE   TRUE  FALSE FALSE FALSE  TRUE FALSE  FALSE     FALSE  FALSE
-#> [4,]     NA    NA     NA     NA    NA    NA    NA    NA     NA        NA     NA
-#> [5,]   TRUE  TRUE  FALSE   TRUE FALSE FALSE FALSE  TRUE  FALSE     FALSE  FALSE
-#> [6,]   TRUE FALSE   TRUE  FALSE  TRUE FALSE FALSE FALSE  FALSE     FALSE   TRUE
-#> [7,]   TRUE FALSE   TRUE  FALSE FALSE FALSE  TRUE FALSE  FALSE     FALSE  FALSE
-#> [8,]   TRUE FALSE   TRUE  FALSE FALSE FALSE  TRUE FALSE  FALSE     FALSE  FALSE
+#>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell
+#> [1,] 1.00       1.00              NA             NA    NA  0.99        NA
+#> [2,] 1.00         NA             0.6             NA    NA    NA        NA
+#> [3,] 0.95       0.95              NA             NA  0.95    NA       0.8
+#> [4,]   NA         NA              NA             NA    NA    NA        NA
+#> [5,] 0.40       0.40              NA             NA    NA    NA        NA
+#>      CD8_TCell
+#> [1,]        NA
+#> [2,]        NA
+#> [3,]        NA
+#> [4,]        NA
+#> [5,]        NA
 ```
 
-You can test if an element is of a specific type with the `tl_get`
-function.
+For each missing element we can give a lower and upper bound what the
+value could be. For the fifth element the chance that it is an
+`ImmuneCell` is `tl_get(vec[5], "ImmuneCell")` = 0.4. This means that
+each child can also be at most `0.4`.
+
+The general formula is that the score for a vertex `v` that is `NA` can
+be at most (in pseudocode):
+`max(0, score(parent(v)) - sum(children(parent(v)), na.rm=TRUE))`.
 
 ``` r
-# Is the element an eagle?
-tl_get(vec, "Eagle")
-#> [1] FALSE  TRUE FALSE    NA FALSE FALSE FALSE FALSE
-
-# Is the element a bird?
-tl_get(vec, "Bird")
-#> [1]  TRUE  TRUE FALSE    NA  TRUE FALSE FALSE FALSE
+# tl_atmost is clever
+tl_atmost(vec) |> tl_score_matrix()
+#>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell
+#> [1,] 1.00       1.00             0.0            0.0  0.01  0.99      0.01
+#> [2,] 1.00       0.40             0.6            0.4  0.40  0.40      0.40
+#> [3,] 0.95       0.95             0.0            0.0  0.95  0.00      0.80
+#> [4,]   NA         NA              NA             NA    NA    NA        NA
+#> [5,] 0.40       0.40             0.0            0.0  0.40  0.40      0.40
+#>      CD8_TCell
+#> [1,]      0.01
+#> [2,]      0.40
+#> [3,]      0.15
+#> [4,]        NA
+#> [5,]      0.40
+# tl_atleast simply replaces `NA`'s with zeros
+tl_atleast(vec) |> tl_score_matrix()
+#>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell
+#> [1,] 1.00       1.00             0.0              0  0.00  0.99       0.0
+#> [2,] 1.00       0.00             0.6              0  0.00  0.00       0.0
+#> [3,] 0.95       0.95             0.0              0  0.95  0.00       0.8
+#> [4,]   NA         NA              NA             NA    NA    NA        NA
+#> [5,] 0.40       0.40             0.0              0  0.00  0.00       0.0
+#>      CD8_TCell
+#> [1,]         0
+#> [2,]         0
+#> [3,]         0
+#> [4,]        NA
+#> [5,]         0
 ```
 
-You can also express uncertainty about any particular label
+The `tl_eval` function evaluates its arguments for `tl_atmost(x)` and
+`tl_atleast(x)`. If the results agree it is returned, if not `tl_eval`
+returns `NA`. A word of caution: this function can give surprising
+results if multiple label references occurr in the expression.
 
 ``` r
-vec2 <- treelabel(list(
-  c(Dog = 1, Poodle = 0.8, Retriever = 0.2),
-  c(Cat = 0.9),
-  c(Animal = 0.78)
-), tree, tree_root = "Animal")
-
-treelabel(tree = tree, tree_root = "Animal")
-#> <treelabel[0]>
-#> # Tree: Animal, Bird, Mammal, Parrot, Dog, E....
-
-vec2
-#> <treelabel[3]>
-#> [1] Poodle(0.80) Cat(0.90)    Animal(0.78)
-#> # Tree: Animal, Bird, Mammal, Parrot, Dog, E....
+t1 <- treelabel(list(c("TCell" = 0.8)), tree)
+# These should both return `NA`
+tl_eval(t1, CD4_TCell > CD8_TCell) 
+#> [1] FALSE
+tl_eval(t1, CD4_TCell < CD8_TCell) 
+#> [1] FALSE
 ```
 
-Concatenation
+## Arithmetic
+
+You can combine two vectors or summarize across elements. You are pretty
+free what type of calculations you do and `treelabel` will try to make
+the right thing happen. You can also do problematic things like produce
+negative values. `treelabel` currently does not stop you, but this
+breaks one of the assumptions of `treelabel`.
 
 ``` r
-c(tl_as_numeric(vec), vec2)
-#> <treelabel[11]>
-#>  [1] Ara(1.00)    Eagle(1.00)  Cat(1.00)    <NA>         Ara(1.00)   
-#>  [6] Poodle(1.00) Cat(1.00)    Cat(1.00)    Poodle(0.80) Cat(0.90)   
-#> [11] Animal(0.78)
-#> # Tree: Animal, Bird, Mammal, Parrot, Dog, E....
-
-# c("Eagle", vec)
-c(vec, "Eagle")
-#> <treelabel[9]>
-#> [1] Ara    Eagle  Cat    <NA>   Ara    Poodle Cat    Cat    Eagle 
-#> # Tree: Animal, Bird, Mammal, Parrot, Dog, E....
+vec2 <- treelabel(c("BCell" = 0.8, "EpithelialCell" = 0.3, "TCell" = 0.9, "CD8_TCell" = 0.2, "TCell" = 0.8), tree)
+tibble(vec, vec2) |>
+  mutate(arithmetic_mean = (vec + vec2) / 2,
+         geometric_mean = (vec * vec2)^(1/2),
+         rounding = round(vec))
+#> # A tibble: 5 × 5
+#>                     vec                 vec2  arithmetic_mean   geometric_mean
+#>                    <tl>                 <tl>             <tl>             <tl>
+#> 1           BCell(0.99)          BCell(0.80)      BCell(0.90)      BCell(0.89)
+#> 2 EndothelialCell(0.60) EpithelialCell(0.30)       root(0.65)       root(0.55)
+#> 3       CD4_TCell(0.80)          TCell(0.90)      TCell(0.93)      TCell(0.92)
+#> 4                    NA      CD8_TCell(0.20)               NA               NA
+#> 5      ImmuneCell(0.40)          TCell(0.80) ImmuneCell(0.60) ImmuneCell(0.57)
+#> # ℹ 1 more variable: rounding <tl>
 ```
 
-``` r
-library(tidyverse)
-#> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-#> ✔ dplyr     1.1.4     ✔ readr     2.1.5
-#> ✔ forcats   1.0.0     ✔ stringr   1.5.1
-#> ✔ ggplot2   3.5.1     ✔ tibble    3.2.1
-#> ✔ lubridate 1.9.3     ✔ tidyr     1.3.1
-#> ✔ purrr     1.0.2     
-#> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-#> ✖ dplyr::filter() masks stats::filter()
-#> ✖ dplyr::lag()    masks stats::lag()
-#> ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
-tibble(id = seq_len(8), vec) |>
-  filter(tl_eval(vec, Bird))
-#> # A tibble: 3 × 2
-#>      id   vec
-#>   <int>  <tl>
-#> 1     1   Ara
-#> 2     2 Eagle
-#> 3     5   Ara
-```
+## Consensus construction
 
-# Cell type scores
+`treelabel` provides functions to make it easy to apply expression
+across `treelabel` columns. These functions are inspired by the
+[`tidyr::across`](https://dplyr.tidyverse.org/reference/across.html)
+function. They take as first argument a specification of columns (e.g.,
+`where(is_treelabel)` or `starts_with("label_")`). The second argument
+is evaluated internally with `tl_eval`.
 
 ``` r
-edges <- c("root", "immune cell",
-           "root", "epithelial cell",
-           "immune cell", "myeloid cell",
-           "immune cell", "lymphoid cell",
-           "lymphoid cell", "t cell",
-           "lymphoid cell", "b cell",
-           "t cell", "CD4 t cell",
-           "t cell", "CD8 t cell",
-           "t cell", "treg cell",
-           "myeloid cell", "neutrophil",
-           "myeloid cell", "dendritic cell",
-           "myeloid cell", "macrophage")
+dat <- tibble(cell_id = paste0("cell_", 1:5), vec, vec2)
 
-g <- igraph::graph(edges, directed = TRUE)
-#> Warning: `graph()` was deprecated in igraph 2.1.0.
-#> ℹ Please use `make_graph()` instead.
-#> This warning is displayed once every 8 hours.
-#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-#> generated.
-plot(g, layout = igraph::layout_as_tree(g, root = "root"))
-```
-
-<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
-
-``` r
-label_list <- list(c("immune cell" = 1, "lymphoid cell" = 0.99, "b cell" = 0.7),
-     c("immune cell" = 1, "lymphoid cell" = 0.99, "t cell" = 0.6, "b cell" = 0.3, "CD4 t cell" = 0.59),
-     c("immune cell" = 1, "lymphoid cell" = 0.99, "t cell" = 0.6, "b cell" = 0.3, "CD4 t cell" = 0.59),
-     c("immune cell" = 1, "lymphoid cell" = 0.99, "t cell" = 0.6, "b cell" = 0.2, "CD8 t cell" = 0.59),
-     c("immune cell" = 1, "lymphoid cell" = 0.99, "t cell" = 0.89, "b cell" = 0.1, "CD4 t cell" = 0.89),
-     c("myeloid cell" = 1),
-     c("myeloid cell" = 1, "dendritic cell" = 1))
-labels1 <- treelabel(label_list, tree = g)
-
-labels1
-#> <treelabel[7]>
-#> [1] b cell(0.70)         CD4 t cell(0.59)     CD4 t cell(0.59)    
-#> [4] CD8 t cell(0.59)     CD4 t cell(0.89)     myeloid cell(1.00)  
-#> [7] dendritic cell(1.00)
-#> # Tree: root, immune cell, epithelial cell, ....
-```
-
-Arithmetics
-
-``` r
-mean(labels1, na.rm=TRUE) |> tl_score_matrix()
-#>      root immune cell epithelial cell myeloid cell lymphoid cell t cell b cell
-#> [1,]    1           1             NaN            1          0.99 0.6725   0.32
-#>      neutrophil dendritic cell macrophage CD4 t cell CD8 t cell treg cell
-#> [1,]        NaN              1        NaN       0.69       0.59       NaN
-```
-
-``` r
-df <- tibble(id = seq_along(labels1), label1 = labels1) 
-df |>
-  mutate(new_score = tl_eval(label1, log(`t cell` + 17)))
-#> # A tibble: 7 × 3
-#>      id               label1 new_score
-#>   <int>                 <tl>     <dbl>
-#> 1     1         b cell(0.70)     NA   
-#> 2     2     CD4 t cell(0.59)      2.87
-#> 3     3     CD4 t cell(0.59)      2.87
-#> 4     4     CD8 t cell(0.59)      2.87
-#> 5     5     CD4 t cell(0.89)      2.88
-#> 6     6   myeloid cell(1.00)     NA   
-#> 7     7 dendritic cell(1.00)     NA
-```
-
-``` r
-labels1
-#> <treelabel[7]>
-#> [1] b cell(0.70)         CD4 t cell(0.59)     CD4 t cell(0.59)    
-#> [4] CD8 t cell(0.59)     CD4 t cell(0.89)     myeloid cell(1.00)  
-#> [7] dendritic cell(1.00)
-#> # Tree: root, immune cell, epithelial cell, ....
-tl_score_matrix(labels1)
-#>      root immune cell epithelial cell myeloid cell lymphoid cell t cell b cell
-#> [1,]    1           1              NA           NA          0.99     NA    0.7
-#> [2,]    1           1              NA           NA          0.99   0.60    0.3
-#> [3,]    1           1              NA           NA          0.99   0.60    0.3
-#> [4,]    1           1              NA           NA          0.99   0.60    0.2
-#> [5,]    1           1              NA           NA          0.99   0.89    0.1
-#> [6,]    1           1              NA            1            NA     NA     NA
-#> [7,]    1           1              NA            1            NA     NA     NA
-#>      neutrophil dendritic cell macrophage CD4 t cell CD8 t cell treg cell
-#> [1,]         NA             NA         NA         NA         NA        NA
-#> [2,]         NA             NA         NA       0.59         NA        NA
-#> [3,]         NA             NA         NA       0.59         NA        NA
-#> [4,]         NA             NA         NA         NA       0.59        NA
-#> [5,]         NA             NA         NA       0.89         NA        NA
-#> [6,]         NA             NA         NA         NA         NA        NA
-#> [7,]         NA              1         NA         NA         NA        NA
-```
-
-``` r
-labels2 <- treelabel(c("b cell", "CD4 t cell", "CD4 t cell", "dendritic cell", "CD4 t cell", "dendritic cell", "dendritic cell"), g, "root")
-
-df <- tibble(id = seq_along(labels1), 
-             label1 = labels1, 
-             label2 = labels2)
-df
-#> # A tibble: 7 × 3
-#>      id               label1         label2
-#>   <int>                 <tl>           <tl>
-#> 1     1         b cell(0.70)         b cell
-#> 2     2     CD4 t cell(0.59)     CD4 t cell
-#> 3     3     CD4 t cell(0.59)     CD4 t cell
-#> 4     4     CD8 t cell(0.59) dendritic cell
-#> 5     5     CD4 t cell(0.89)     CD4 t cell
-#> 6     6   myeloid cell(1.00) dendritic cell
-#> 7     7 dendritic cell(1.00) dendritic cell
-# sum(df$label2) |> tl_score_matrix()
-
-df |>
-  mutate(new = tl_mean_across(starts_with("label"), `CD4 t cell` > 0.8) )
-#> # A tibble: 7 × 4
-#>      id               label1         label2   new
-#>   <int>                 <tl>           <tl> <dbl>
-#> 1     1         b cell(0.70)         b cell   0  
-#> 2     2     CD4 t cell(0.59)     CD4 t cell   0.5
-#> 3     3     CD4 t cell(0.59)     CD4 t cell   0.5
-#> 4     4     CD8 t cell(0.59) dendritic cell   0  
-#> 5     5     CD4 t cell(0.89)     CD4 t cell   1  
-#> 6     6   myeloid cell(1.00) dendritic cell   0  
-#> 7     7 dendritic cell(1.00) dendritic cell   0
-
-df |>
-  filter(tl_if_all(starts_with("label"), `t cell` > 0.3))
-#> # A tibble: 3 × 3
-#>      id           label1     label2
-#>   <int>             <tl>       <tl>
-#> 1     2 CD4 t cell(0.59) CD4 t cell
-#> 2     3 CD4 t cell(0.59) CD4 t cell
-#> 3     5 CD4 t cell(0.89) CD4 t cell
-
-df |>
-  mutate(n_tcell = tl_sum_across(starts_with("label"), `t cell` > 0.3))
-#> # A tibble: 7 × 4
-#>      id               label1         label2 n_tcell
-#>   <int>                 <tl>           <tl>   <dbl>
-#> 1     1         b cell(0.70)         b cell       0
-#> 2     2     CD4 t cell(0.59)     CD4 t cell       2
-#> 3     3     CD4 t cell(0.59)     CD4 t cell       2
-#> 4     4     CD8 t cell(0.59) dendritic cell       1
-#> 5     5     CD4 t cell(0.89)     CD4 t cell       2
-#> 6     6   myeloid cell(1.00) dendritic cell       0
-#> 7     7 dendritic cell(1.00) dendritic cell       0
+dat |> mutate(is_immune = tl_across(where(is_treelabel), ImmuneCell > 0.7))
+#> # A tibble: 5 × 4
+#>   cell_id                   vec                 vec2 is_immune$vec $vec2
+#>   <chr>                    <tl>                 <tl> <lgl>         <lgl>
+#> 1 cell_1            BCell(0.99)          BCell(0.80) TRUE          TRUE 
+#> 2 cell_2  EndothelialCell(0.60) EpithelialCell(0.30) FALSE         FALSE
+#> 3 cell_3        CD4_TCell(0.80)          TCell(0.90) TRUE          TRUE 
+#> 4 cell_4                     NA      CD8_TCell(0.20) NA            FALSE
+#> 5 cell_5       ImmuneCell(0.40)          TCell(0.80) FALSE         TRUE
+dat |> mutate(immune_counts = tl_sum_across(where(is_treelabel), ImmuneCell > 0.7))
+#> # A tibble: 5 × 4
+#>   cell_id                   vec                 vec2 immune_counts
+#>   <chr>                    <tl>                 <tl>         <dbl>
+#> 1 cell_1            BCell(0.99)          BCell(0.80)             2
+#> 2 cell_2  EndothelialCell(0.60) EpithelialCell(0.30)             0
+#> 3 cell_3        CD4_TCell(0.80)          TCell(0.90)             2
+#> 4 cell_4                     NA      CD8_TCell(0.20)             0
+#> 5 cell_5       ImmuneCell(0.40)          TCell(0.80)             1
+dat |> mutate(mean_immune_score = tl_mean_across(where(is_treelabel), ImmuneCell))
+#> # A tibble: 5 × 4
+#>   cell_id                   vec                 vec2 mean_immune_score
+#>   <chr>                    <tl>                 <tl>             <dbl>
+#> 1 cell_1            BCell(0.99)          BCell(0.80)             0.9  
+#> 2 cell_2  EndothelialCell(0.60) EpithelialCell(0.30)             0    
+#> 3 cell_3        CD4_TCell(0.80)          TCell(0.90)             0.925
+#> 4 cell_4                     NA      CD8_TCell(0.20)             0.2  
+#> 5 cell_5       ImmuneCell(0.40)          TCell(0.80)             0.6
+dat |> filter(tl_if_all(where(is_treelabel), ImmuneCell > 0.7))
+#> # A tibble: 2 × 3
+#>   cell_id             vec        vec2
+#>   <chr>              <tl>        <tl>
+#> 1 cell_1      BCell(0.99) BCell(0.80)
+#> 2 cell_3  CD4_TCell(0.80) TCell(0.90)
 ```
 
 # Session Info
@@ -309,19 +451,24 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#>  [1] lubridate_1.9.3 forcats_1.0.0   stringr_1.5.1   dplyr_1.1.4    
-#>  [5] purrr_1.0.2     readr_2.1.5     tidyr_1.3.1     tibble_3.2.1   
-#>  [9] ggplot2_3.5.1   tidyverse_2.0.0 treelabel_0.0.2
+#>  [1] lubridate_1.9.3  forcats_1.0.0    stringr_1.5.1    dplyr_1.1.4     
+#>  [5] purrr_1.0.2      readr_2.1.5      tidyr_1.3.1      tibble_3.2.1    
+#>  [9] ggplot2_3.5.1    tidyverse_2.0.0  treelabel_0.0.3  testthat_3.2.1.1
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] gtable_0.3.6      crayon_1.5.3      compiler_4.4.1    tidyselect_1.2.1 
-#>  [5] scales_1.3.0      yaml_2.3.10       fastmap_1.2.0     R6_2.5.1         
-#>  [9] generics_0.1.3    igraph_2.1.1      knitr_1.49        munsell_0.5.1    
-#> [13] pillar_1.9.0      tzdb_0.4.0        rlang_1.1.4       utf8_1.2.4       
-#> [17] stringi_1.8.4     xfun_0.49         timechange_0.3.0  cli_3.6.3        
-#> [21] withr_3.0.2       magrittr_2.0.3    digest_0.6.37     grid_4.4.1       
-#> [25] rstudioapi_0.17.1 hms_1.1.3         lifecycle_1.0.4   vctrs_0.6.5      
-#> [29] evaluate_1.0.1    glue_1.8.0        fansi_1.0.6       colorspace_2.1-1 
-#> [33] rmarkdown_2.29    matrixStats_1.4.1 tools_4.4.1       pkgconfig_2.0.3  
-#> [37] htmltools_0.5.8.1
+#>  [1] generics_0.1.3    utf8_1.2.4        stringi_1.8.4     hms_1.1.3        
+#>  [5] digest_0.6.37     magrittr_2.0.3    timechange_0.3.0  evaluate_1.0.1   
+#>  [9] grid_4.4.1        pkgload_1.4.0     fastmap_1.2.0     rprojroot_2.0.4  
+#> [13] pkgbuild_1.4.5    sessioninfo_1.2.2 brio_1.1.5        urlchecker_1.0.1 
+#> [17] promises_1.3.1    fansi_1.0.6       scales_1.3.0      cli_3.6.3        
+#> [21] shiny_1.9.1       rlang_1.1.4       munsell_0.5.1     ellipsis_0.3.2   
+#> [25] remotes_2.5.0     withr_3.0.2       cachem_1.1.0      yaml_2.3.10      
+#> [29] devtools_2.4.5    tools_4.4.1       tzdb_0.4.0        memoise_2.0.1    
+#> [33] colorspace_2.1-1  httpuv_1.6.15     vctrs_0.6.5       R6_2.5.1         
+#> [37] mime_0.12         matrixStats_1.4.1 lifecycle_1.0.4   fs_1.6.5         
+#> [41] htmlwidgets_1.6.4 usethis_3.1.0     miniUI_0.1.1.1    pkgconfig_2.0.3  
+#> [45] desc_1.4.3        pillar_1.9.0      later_1.4.0       gtable_0.3.6     
+#> [49] glue_1.8.0        profvis_0.4.0     Rcpp_1.0.13-1     tidyselect_1.2.1 
+#> [53] xfun_0.49         rstudioapi_0.17.1 knitr_1.49        xtable_1.8-4     
+#> [57] htmltools_0.5.8.1 igraph_2.1.1      rmarkdown_2.29    compiler_4.4.1
 ```
