@@ -22,7 +22,7 @@ tl_across <- function(.cols, expr, ...){
 tl_if_any <- function(.cols, expr, ...){
   dplyr::if_any({{.cols}}, \(x){
     stopifnot(is_treelabel(x))
-    tl_is(x, {{expr}})
+    tl_eval(x, {{expr}})
   }, ...)
 }
 
@@ -31,7 +31,7 @@ tl_if_any <- function(.cols, expr, ...){
 tl_if_all <- function(.cols, expr, ...){
   dplyr::if_all({{.cols}}, \(x){
     stopifnot(is_treelabel(x))
-    tl_is(x, {{expr}})
+    tl_eval(x, {{expr}})
   }, ...)
 }
 
@@ -48,20 +48,6 @@ tl_mean_across <- function(.cols, expr, ..., na.rm = TRUE){
   mat <- as.matrix(tl_across({{.cols}}, {{expr}}, ...))
   rowMeans(mat, na.rm = na.rm)
 }
-
-#' #' @export
-#' #' @rdname tl_across
-#' tl_count_across <- function(.cols, expr, ..., na.rm = TRUE){
-#'   mat <- as.matrix(tl_across({{.cols}}, {{expr}}, ...))
-#'   rowSums(mat, na.rm = na.rm)
-#' }
-#'
-#' #' @export
-#' #' @rdname tl_across
-#' tl_fraction_across <- function(.cols, expr, ..., na.rm = TRUE){
-#'   mat <- as.matrix(tl_across({{.cols}}, {{expr}}, ...))
-#'   rowMeans(mat, na.rm = na.rm)
-#' }
 
 #' @export
 #' @rdname tl_across
