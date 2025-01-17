@@ -172,6 +172,21 @@ is_treelabel <- function(x){
   inherits(x, "treelabel")
 }
 
+#' Extract tree or root from treelabel
+#'
+#' @param x object
+#'
+#' @export
+tl_tree <- function(x){
+  .get_tree(x)
+}
+
+#' @rdname tl_tree
+#' @export
+tl_tree_root <- function(x){
+  .get_tree_root(x)
+}
+
 
 .assign_to_matrix <- function(data, labels, ids, scores){
   ids <- as.factor(ids)
