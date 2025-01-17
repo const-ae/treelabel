@@ -63,6 +63,54 @@ test_that("treelabel constructors works", {
   expect_equal(vec2, vec3, ignore_attr = "tree")
 })
 
+test_that("treelabel list constructor can handle all forms of empty as NA", {
+  tree <- igraph::graph_from_literal(
+    Animal - Bird : Mammal,
+    Bird - Parrot : Eagle,
+    Mammal - Dog : Cat
+  )
+  lst <- list(c(Eagle = 1, Bird = 1),
+              c(Animal = 1, Mammal = 1, Dog = 1),
+              NA,
+              c(Bird = 1)
+  )
+  vec1 <- treelabel(lst, tree = tree, tree_root = "Animal")
+
+  # NULL is treated as NA
+  lst[3] <- list(NULL)
+  vec2 <- treelabel(lst, tree = tree, tree_root = "Animal")
+
+  lst[[3]] <- NA
+  vec3 <- treelabel(lst, tree = tree, tree_root = "Animal")
+
+  expect_equal(vec2, vec1, ignore_attr = "tree")
+  expect_equal(vec3, vec1, ignore_attr = "tree")
+})
+
+test_that("treelabel list constructor works with different inputs",{
+  tree <- igraph::graph_from_literal(
+    Animal - Bird : Mammal,
+    Bird - Parrot : Eagle,
+    Mammal - Dog : Cat
+  )
+  lst <- list(
+    c("Eagle", "Bird"),
+    c("Mammal")
+  )
+  vec1 <- treelabel(lst, tree = tree, tree_root = "Animal")
+  lst[[2]] <- factor(c("Mammal"))
+  vec2 <- treelabel(lst, tree = tree, tree_root = "Animal")
+
+  lst[[2]] <- c("Mammal" = 1.0)
+  vec3 <- treelabel(lst, tree = tree, tree_root = "Animal")
+
+  expect_equal(vec2, vec1, ignore_attr = "tree")
+  expect_equal(vec3, vec1, ignore_attr = "tree")
+
+  names(lst) <- c("first_entry", "second_entry")
+  vec4 <- treelabel(lst, tree = tree, tree_root = "Animal")
+})
+
 test_that("treelabel_from_dataframe works", {
   tree <- igraph::graph_from_literal(
     Animal - Bird : Mammal,
