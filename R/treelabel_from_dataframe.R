@@ -1,7 +1,6 @@
 #' Convert data.frame to treelabel
 #'
-#' @param id,label,score strings that specify the names of the respective
-#'   columns in the `treelabel.data.frame` constructor.
+#' @inheritParams treelabel
 #' @param id the column name of `x` specifying which elements belong together.
 #' @param label,score the column names of `x` that specify the names and confidence scores
 #'   of each entry

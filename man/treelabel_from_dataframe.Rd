@@ -17,15 +17,30 @@ treelabel_from_dataframe(
 )
 }
 \arguments{
-\item{id, label, score}{strings that specify the names of the respective
-columns in the \code{treelabel.data.frame} constructor.}
+\item{x}{object that is converted to a \code{treelabel}}
+
+\item{tree}{\code{igraph} object that represents the hierarchical relationship
+of the labels. Must satisfy \code{igraph::is_tree}. (_)}
+
+\item{tree_root}{the name of the root of the tree. Default: \code{"root"}.}
+
+\item{id}{the column name of \code{x} specifying which elements belong together.}
 
 \item{label, score}{the column names of \code{x} that specify the names and confidence scores
 of each entry}
 
 \item{name}{the name of the \code{treelabel} column in the output \code{data.frame}.}
 
-\item{id}{the column name of \code{x} specifying which elements belong together.}
+\item{propagate_up}{mode how scores are propagated through the tree.
+\describe{
+\item{\code{"sum"}}{each node where the score is \code{NA} is replaced by the
+sum of its children's scores}
+\item{\code{"cumsum"}}{each node is replaced by the
+sum of its children's scores plus its own score (where \code{NA} is treated as zero)}
+\item{\code{"none"}}{No values other values in the tree structure are modified}
+}}
+
+\item{...}{additional arguments. Provided for compatability.}
 }
 \value{
 a \code{data.frame} with one row per unique \code{id} and two columns:
