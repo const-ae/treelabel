@@ -11,6 +11,7 @@
 #'
 #' @export
 tl_across <- function(.cols, expr, ...){
+  if(! require("dplyr", character.only = TRUE)) stop("This function depends on 'dplyr' package. Please install it.")
   dplyr::across({{.cols}}, \(x){
     stopifnot(is_treelabel(x))
     tl_eval(x, {{expr}})
@@ -20,6 +21,7 @@ tl_across <- function(.cols, expr, ...){
 #' @export
 #' @rdname tl_across
 tl_if_any <- function(.cols, expr, ...){
+  if(! require("dplyr", character.only = TRUE)) stop("This function depends on 'dplyr' package. Please install it.")
   dplyr::if_any({{.cols}}, \(x){
     stopifnot(is_treelabel(x))
     tl_eval(x, {{expr}})
@@ -29,6 +31,7 @@ tl_if_any <- function(.cols, expr, ...){
 #' @export
 #' @rdname tl_across
 tl_if_all <- function(.cols, expr, ...){
+  if(! require("dplyr", character.only = TRUE)) stop("This function depends on 'dplyr' package. Please install it.")
   dplyr::if_all({{.cols}}, \(x){
     stopifnot(is_treelabel(x))
     tl_eval(x, {{expr}})
