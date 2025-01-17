@@ -6,51 +6,50 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of treelabel is to store and work with labels which exist in a
+The goal of treelabel is to store and work with labels that exist in a
 hierarchical relationship.
 
 This is an alpha software release: feel free to play around with the
-code and please provide feedback, but expect breaking changes to the
+code, and please provide feedback, but expect breaking changes to the
 API!
 
 ## Motivation
 
 ![](man/figures/celltype_tree.png)
 
-I work on single-cell RNA-seq data wherre we have gene expression
-profiles for thousands of cells. A common first step is to annotate the
-*cell type* of each cell. These cell type can be given in varying
-granularity, classifying the cells broadly into *immune cells* or
-*epithelial cells*. Or these can be very detailed where you distinguish
-within the immune cells the *CD4 positive T regulatory cells* from the
-*CD4 positive T follicular helper cells*. Choosing the best annotation
-level can be difficult because one analysis may need broad categories
-whereas others require the highest possible resolution. The `treelabel`
-package provides an intuitive interface to store and work with these
-hierarchically related labels.
+I work on single-cell RNA-seq data with gene expression profiles for
+thousands of cells. A common first step is to annotate each cell’s *cell
+type*. The granularity of these cell type annotations can vary; one can
+classify cells broadly into *immune cells* or *epithelial cells* or one
+can be very detailed and distinguish within the immune cells *CD4
+positive T regulatory cells* from *CD4 positive T follicular helper
+cells*. Choosing the best annotation level can be difficult because one
+analysis may need broad cell types, whereas others require the highest
+possible resolution. The `treelabel` package provides an intuitive
+interface to store and work with these hierarchically related labels.
 
-Depending on the reference data, annotation method and exact parameters
-that you use for the cell typing, you often have multiple conflicting
-annotations. `treelabel` provides functions to build a consensus across
-different annotations and can integrate annotations that are designed
-for different resolution. Furthermore, `treelabel` supports uncertainty
-scores associated with a label. For example most automatic cell type
-scoring tools (like [Azimuth](https://azimuth.hubmapconsortium.org/) or
-[celltypist](https://www.celltypist.org/), return in addition to the
-cell type label, a confidence score. These allow more fine-grained
-selection of cells where you have a sufficient confidence that it is of
-a particular cell type.
+Depending on the reference data and annotation method used for the cell
+typing, you often have multiple (partially) conflicting annotations.
+`treelabel` provides functions to build a consensus across different
+annotations and can integrate annotations at different resolutions.
+Furthermore, `treelabel` supports uncertainty scores associated with a
+label. For example, most automatic cell type scoring tools (like
+[Azimuth](https://azimuth.hubmapconsortium.org/) or
+[celltypist](https://www.celltypist.org/), return a confidence score in
+addition to the cell type label. These scores enable a more precise
+selection of cells where you have sufficient confidence in the cell type
+label.
 
 ## What this package is. And what it is not,
 
 This package is purposefully kept generic and only makes the following
 assumptions:
 
-- Your labels have a tree-like relationship: that means the edges
-  between the labels are directed and there are no cycles.
+- Your labels have a tree-like relationship: the edges between the
+  labels are directed, and there are no cycles.
 - The relation between a parent and a child can phrased as *is a*. For
   example, a *`T cell` is a `Immune cell`*.
-- The scores can be logical or a non-negative number.
+- The scores can be logical or non-negative numbers.
 
 This package does not provide any functionality to:
 
@@ -59,22 +58,20 @@ This package does not provide any functionality to:
   [this](https://github.com/seandavi/awesome-single-cell?tab=readme-ov-file#cell-type-identification-and-classification)
   list for a selection) or do it manually using clustering plus marker
   gene expression.
-- Automatically harmonize cell type labels from different reference
-  (e.g., figure out that the cells that are called `NK cells` in one
-  dataset are the same as the `Natural killer cells` from another
-  dataset). You will probably have to do this manually. There is an
-  example further down in the README.
-- Provide the optimal cell type tree. There are some examples in this
-  repository, but you will probably want to define it for your own
-  analysis depending on the annotations that you have. As a reference,
-  take a look at the [cell ontology
+- Automatically harmonize cell type labels from different references
+  (e.g., figure out that the `NK cells` from one dataset correspond to
+  the `Natural killer cells` from another). You will probably have to do
+  this manually. There is an example further down in the README.
+- Provide the optimal cell type tree. You will probably want to define
+  the tree for your analysis depending on the annotations available to
+  you. As a reference, look at the [cell ontology
   project](https://cell-ontology.github.io/), which provides a large
-  database of cell type label relationships and is used for example by
-  the Human Cell Atlas.
+  database of cell type label relationships and is used by the Human
+  Cell Atlas.
 - Plot trees. For demonstration purposes, we will use the `igraph` plots
-  (which are not very pretty) and for the plot on the top I used the
+  (which are not very pretty), and for the plot on the top, I used the
   [D3](https://d3js.org/) library from Javascript (which is cumbersome
-  to use from R). Long-term I will probably want to develop some
+  to use from R). In the long term, I will probably want to develop
   additional tooling to improve this, but such code would probably live
   outside this package.
 
@@ -88,7 +85,7 @@ devtools::install_github("const-ae/treelabel")
 
 ## Example
 
-We begin by defining our label hierarchy using
+We define our label hierarchy using
 [`igraph`](https://r.igraph.org/articles/igraph.html).
 
 ``` r
@@ -111,9 +108,9 @@ library(tidyverse)
 
 ### Constructors
 
-The easiest way to make a `treelabel` vector, is to make one from a
-character vector. You just call the `treelabel` contructor provide the
-labels and the reference `tree`
+The easiest way to make a `treelabel` vector is to make one from a
+character vector. You call the `treelabel` constructor and provide the
+labels and the reference tree
 
 ``` r
 char_vec <- c("BCell", "EndothelialCell", "CD4_TCell", NA, "BCell", "EpithelialCell", "ImmuneCell")
@@ -126,7 +123,7 @@ vec
 ```
 
 If you have some uncertainty associated with each label, you can also
-use a named `numeric` vector to make a `treelabel` vector
+use a named `numeric` vector to make a `treelabel` vector.
 
 ``` r
 num_vec <- c("BCell" = 0.99, "EndothelialCell" = 0.6, "CD4_TCell" = 0.8, NA, "BCell" = 0.78, "EpithelialCell" = 0.9, "ImmuneCell" = 0.4)
@@ -139,8 +136,8 @@ vec
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 ```
 
-Some tools provide you with a full set of confidence scores for each
-element. In this case you can provide a `list` or a `data.frame`
+Some tools provide the confidence scores for tree vertex. In this case,
+you can provide the annotations as a `list` or a `data.frame`
 
 ``` r
 lst <- list(
@@ -159,13 +156,13 @@ vec
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 ```
 
-Lastly, you can take a tidy data frame and convert it to a treelabel.
-The `treelabel_from_dataframe` works differently from the other
+Lastly, you can convert a “tidy” data frame to a treelabel. The
+`treelabel_from_dataframe` works differently from the other
 constructors, as it returns a `data.frame` with an ID column and a
-`treelabel` column. The reason why the function can not directly return
-a `treelabel` vector is that the order of the rows in the data.frame
-could be scrambled in which case it is unclear what cell the element in
-the treelabel belongs to.
+`treelabel` column. The function cannot directly return a `treelabel`
+vector because the order of the rows in the data.frame could be
+scrambled, in which case it is unclear how cells and elements in the
+treelabel relate.
 
 ``` r
 df <- data.frame(
@@ -215,17 +212,18 @@ It also automatically coerces strings or named vectors when
 concatenating.
 
 ``` r
-# Actually this is not working yet.
+# Actually, this is not working yet.
 # c(vec, c(BCell = 1))
 ```
 
-You can extract the tree from a `treelabel` and the root
+You can extract the tree from a `treelabel` and the name of the tree
+root.
 
 ``` r
 tl_tree(vec)
-#> IGRAPH 46082d7 DN-- 8 7 -- 
+#> IGRAPH 2f5be40 DN-- 8 7 -- 
 #> + attr: name (v/c)
-#> + edges from 46082d7 (vertex names):
+#> + edges from 2f5be40 (vertex names):
 #> [1] root      ->ImmuneCell      root      ->EndothelialCell
 #> [3] root      ->EpithelialCell  ImmuneCell->TCell          
 #> [5] ImmuneCell->BCell           TCell     ->CD4_TCell      
@@ -237,8 +235,8 @@ tl_tree_root(vec)
 ### Testing the identity
 
 The printing function builds on the `tl_name`, which returns the first
-non `NA` vertex with a score large than `0`. We can change this
-threshold. For example the *CD4_TCell* label does not pass the `0.9`
+non `NA` vertex with a score larger than `0`. We can change this
+threshold. For example, the *CD4_TCell* label does not pass the `0.9`
 threshold, but the *TCell* label does.
 
 ``` r
@@ -267,9 +265,9 @@ tibble(vec) |> mutate(is_tcell = tl_eval(vec, TCell > 0.9))
 #> 5      ImmuneCell(0.40) FALSE
 ```
 
-`treelabel` is clever about evaluating these expressions. If for example
-we ask if the cell might be a T cell (i.e., `TCell > 0.2`), the second
-and fifth entry switch from `FALSE` to `NA`.
+`treelabel` is clever about evaluating these expressions. If, for
+example, we ask if the cell might be a T cell (i.e., `TCell > 0.2`), the
+second and fifth entries switch from `FALSE` to `NA`.
 
 ``` r
 tibble(vec) |> mutate(maybe_tcell = tl_eval(vec, TCell > 0.2))
@@ -283,9 +281,9 @@ tibble(vec) |> mutate(maybe_tcell = tl_eval(vec, TCell > 0.2))
 #> 5      ImmuneCell(0.40) NA
 ```
 
-To understand why it is helpful to look at the way that `treelabel`
-internally stores the data. As you see each score that was not specified
-is kept as `NA`.
+To understand why, let’s look at how `treelabel` internally stores the
+data. Internally, the scores are stored as a matrix with one column for
+each label, and the scores that were not specified are stored as `NA`.
 
 ``` r
 tl_score_matrix(vec)
@@ -303,10 +301,10 @@ tl_score_matrix(vec)
 #> [5,]        NA
 ```
 
-For each missing element we can give a lower and upper bound what the
-value could be. For the fifth element the chance that it is an
-`ImmuneCell` is `tl_get(vec[5], "ImmuneCell")` = 0.4. This means that
-each child can also be at most `0.4`.
+For each missing element, we can give a lower and upper bound for the
+value. For the fifth element the chance that it is an `ImmuneCell` is
+`tl_get(vec[5], "ImmuneCell")` = 0.4. This means that each child can
+also be at most `0.4`.
 
 The general formula is that the score for a vertex `v` that is `NA` can
 be at most (in pseudocode):
@@ -344,9 +342,9 @@ tl_atleast(vec) |> tl_score_matrix()
 ```
 
 The `tl_eval` function evaluates its arguments for `tl_atmost(x)` and
-`tl_atleast(x)`. If the results agree it is returned, if not `tl_eval`
+`tl_atleast(x)`. If the results agree, it is returned; if not, `tl_eval`
 returns `NA`. A word of caution: this function can give surprising
-results if multiple label references occurr in the expression.
+results if multiple label references occur in the expression.
 
 ``` r
 t1 <- treelabel(list(c("TCell" = 0.8)), tree)
@@ -359,9 +357,9 @@ tl_eval(t1, CD4_TCell < CD8_TCell)
 
 ## Arithmetic
 
-You can combine two vectors or summarize across elements. You are pretty
-free what type of calculations you do and `treelabel` will try to make
-the right thing happen. You can also do problematic things like produce
+You can combine two vectors or summarize across elements. You can do
+whatever calculations you want, and `treelabel` will try to make the
+right thing happen. You can also do problematic things like produce
 negative values. `treelabel` currently does not stop you, but this
 breaks one of the assumptions of `treelabel`.
 
@@ -385,11 +383,11 @@ tibble(vec, vec2) |>
 ## Consensus construction
 
 `treelabel` provides functions to make it easy to apply expression
-across `treelabel` columns. These functions are inspired by the
+across `treelabel` columns. These functions are built on top of
 [`tidyr::across`](https://dplyr.tidyverse.org/reference/across.html)
-function. They take as first argument a specification of columns (e.g.,
-`where(is_treelabel)` or `starts_with("label_")`). The second argument
-is evaluated internally with `tl_eval`.
+function. They take as the first argument a specification of columns
+(e.g., `where(is_treelabel)` or `starts_with("label_")`). The second
+argument is evaluated internally with `tl_eval`.
 
 ``` r
 dat <- tibble(cell_id = paste0("cell_", 1:5), vec, vec2)
