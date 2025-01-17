@@ -49,3 +49,54 @@ test_that("tl_atmost works", {
   expect_equal(tl_score_matrix(vec_mod2)[2,],
                c(Animal = TRUE, Bird = FALSE, Mammal = TRUE, Parrot = FALSE, Eagle = FALSE, Dog = TRUE, Cat = FALSE))
 })
+
+
+test_that("tl_update works", {
+  skip("tl_update is not ready yet")
+  tree <- igraph::graph_from_literal(
+    Animal - Bird : Mammal,
+    Bird - Parrot : Eagle,
+    Mammal - Dog : Cat
+  )
+
+
+  vec <- treelabel(
+    list(c(Animal = 1, Eagle = 0.3, Bird = 0.9, Mammal = 0.01),
+         c(Animal = 1, Mammal = 0.8, Dog = 0.7),
+         NA,
+         c(Bird = 1)
+    ), tree = tree, tree_root = "Animal")
+
+  tl_update(vec, Mammal = Mammal * 3) |> tl_score_matrix()
+
+
+
+  var <- "Mammal"
+  tl_update(vec, {{var}} := 3) |> tl_score_matrix()
+
+  tl_update(vec,
+            Mammal = 4,
+            data.frame(
+              Mammal = Mammal * 3,
+              Bird = 17
+            )) |> tl_score_matrix()
+
+  tl_update(vec,
+            Mammal = Mammal * 3,
+            x = tl_along(children(Mammal), \(x) x * 3))
+  tl_eval(x, children(Mammal)  / rowSums(children(Mammal)))
+
+  tl_map <- function(.vertices, expr){
+
+  }
+  tl_map(children(Mammal), \(x, vertex){
+    tl_eval(x, {{vertex}} * 3)
+  })
+
+  children <- function(vertex_name, direct_only = FALSE){
+
+  }
+
+
+
+})

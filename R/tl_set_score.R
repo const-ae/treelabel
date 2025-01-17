@@ -1,28 +1,65 @@
 
 
-tl_set_score <- function(x, label, score,
-                         propagate_NAs_down = TRUE,
-                         propagate_score_up = c("sum", "cumsum", "none"),
-                         overwrite = TRUE){
-  stopifnot(is_treelabel(x))
-  label <- vctrs::vec_cast(label, "character")
+# tl_set_score <- function(x, label, score,
+#                          propagate_NAs_down = TRUE,
+#                          propagate_score_up = c("sum", "cumsum", "none"),
+#                          overwrite = TRUE){
+#   stopifnot(is_treelabel(x))
+#   label <- vctrs::vec_cast(label, "character")
+#
+#   args <- vctrs::vec_recycle_common(x, label, score)
+#   x <- args[[1L]]; label <- args[[2L]]; score <- args[[3L]]
+#
+#
+#   new_data <- .assign_to_matrix(tl_score_matrix(x), ids = seq_along(x),
+#                                 labels = label, scores = score)
+#   res <- .treelabel_like(new_data, x)
+#   res <- .propagate_score_up(res, mode = propagate_score_up, overwrite = overwrite)
+#   if(propagate_NAs_down){
+#     res <- .propagate_NAs_down(res)
+#   }
+#   res
+# }
 
-  args <- vctrs::vec_recycle_common(x, label, score)
-  x <- args[[1L]]; label <- args[[2L]]; score <- args[[3L]]
+#' Modify the treelabel values
+#'
+#' @param ... tidyeval dots.
+#'
+tl_update <- function(x, ...){
+  tree <- .get_tree(x)
+  vertex_names <- .tree_vertex_names(tree)
+  vars <- rlang::enquos(..., .named = FALSE)
 
-
-  new_data <- .assign_to_matrix(tl_score_matrix(x), ids = seq_along(x),
-                                labels = label, scores = score)
-  res <- .treelabel_like(new_data, x)
-  res <- .propagate_score_up(res, mode = propagate_score_up, overwrite = overwrite)
-  if(propagate_NAs_down){
-    res <- .propagate_NAs_down(res)
+  new_names <- names(vars)
+  if(! all(new_names == "" | new_names %in% vertex_names)){
+    wrong_name <- which(! new_names %in% vertex_names)
+    stop("Assigning to '", toString(wrong_name, width = 30), "' is not possible as they are not vertices.")
   }
-  res
+  mat <- tl_score_matrix(x)
+  for(idx in seq_along(vars)){
+
+    n <- new_names[idx]
+    res <- .eval_impl(x, expr = !!vars[[idx]])
+
+    if(is.data.frame(res) || is.matrix(res)){
+      res <- as.matrix(res)
+      nn <- colnames(res)
+      if(n != ""){
+        stop("The name for the ", idx, " element must be empty (not '", n, "'),",
+             "beause the expression evaluated to a data.frame/matrix.")
+      }
+      if(! all(nn %in% vertex_names)){
+        wrong_name <- which(! nn %in% vertex_names)
+        stop("Assigning to '", toString(wrong_name, width = 30), "' is not possible as they are not vertices.")
+      }
+      mat[,nn] <- res
+    }else{
+      mat[,n] <- res
+    }
+    x <- .treelabel_like(mat, x)
+  }
+  x
 }
-
-
-
 
 #' Replace each NA with the maximum value that it could have
 #'
