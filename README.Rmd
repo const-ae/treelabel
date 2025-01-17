@@ -29,7 +29,7 @@ This is an alpha software release: feel free to play around with the code, and p
 
 I work on single-cell RNA-seq data with gene expression profiles for thousands of cells. A common first step is to annotate each cell's *cell type*. The granularity of these cell type annotations can vary; one can classify cells broadly into *immune cells* or *epithelial cells* or one can be very detailed and distinguish within the immune cells *CD4 positive T regulatory cells* from *CD4 positive T follicular helper cells*. Choosing the best annotation level can be difficult because one analysis may need broad cell types, whereas others require the highest possible resolution. The `treelabel` package provides an intuitive interface to store and work with these hierarchically related labels. 
 
-Depending on the reference data and annotation method used for the cell typing, you often have multiple (partially) conflicting annotations. `treelabel` provides functions to build a consensus across different annotations and can integrate annotations at different resolutions. Furthermore, `treelabel` supports uncertainty scores associated with a label. For example, most automatic cell type scoring tools (like [Azimuth](https://azimuth.hubmapconsortium.org/) or [celltypist](https://www.celltypist.org/), return a confidence score in addition to the cell type label. These scores enable a more precise selection of cells where you have sufficient confidence in the cell type label.
+Depending on the reference data and annotation method used for the cell typing, you often have multiple (partially) conflicting annotations. `treelabel` provides functions to build a consensus across different annotations and can integrate annotations at different resolutions. Furthermore, `treelabel` supports uncertainty scores associated with a label. For example, most automatic cell type scoring tools (like [Azimuth](https://azimuth.hubmapconsortium.org/) or [celltypist](https://www.celltypist.org/)), return a confidence score in addition to the cell type label. These scores enable a more precise selection of cells where you have sufficient confidence in the cell type label.
 
 ## What this package is. And what it is not,
 
@@ -104,7 +104,7 @@ Some tools provide the confidence scores for tree vertex. In this case, you can 
 ```{r}
 lst <- list(
   c(BCell = 0.99, ImmuneCell = 1),
-  c(root = 1, EndothelialCell = 0.6),
+  c(root = 1, EndothelialCell = 0.65),
   c(CD4_TCell = 0.8, TCell = 0.95, ImmuneCell = 0.95),
   NULL, # will be treated as NA
   c(ImmuneCell = 0.4)
@@ -156,13 +156,13 @@ tl_tree_root(vec)
 
 ### Testing the identity
 
-The printing function builds on the `tl_name`, which returns the first non `NA` vertex with a score larger than `0`. We can change this threshold. For example, the *CD4_TCell* label does not pass the `0.9` threshold, but the *TCell* label does.
+The printing function builds on the `tl_name`, which returns the first non `NA` vertex with a score larger than `0`. We can change this threshold. For example, for the third cell the *CD4_TCell* label does not pass the `0.9` threshold, but the *TCell* label does.
 
 ```{r, paged.print=FALSE}
 tibble(vec, tl_name(vec), tl_name(vec, threshold = 0.9))
 ```
 
-You can also evaluate logical expressions using `tl_eval`.
+You can also evaluate arbitrary expressions using `tl_eval`.
 
 ```{r, paged.print=FALSE}
 tibble(vec) |> mutate(is_tcell = tl_eval(vec, TCell > 0.9))
@@ -180,7 +180,7 @@ To understand why, let's look at how `treelabel` internally stores the data.  In
 tl_score_matrix(vec)
 ```
 
-For each missing element, we can give a lower and upper bound for the value. For the fifth element the chance that it is an `ImmuneCell` is `tl_get(vec[5], "ImmuneCell")` = `r tl_get(vec[5], "ImmuneCell")`. This means that each child can also be at most `0.4`.
+For each missing element, we can give a lower and upper bound for the value. For the fifth element the confidence that it is an `ImmuneCell` is `tl_get(vec[5], "ImmuneCell")` = `r tl_get(vec[5], "ImmuneCell")`. This means that each child can also be at most `0.4`.
 
 The general formula is that the score for a vertex `v` that is `NA` can be at most (in pseudocode): `max(0, score(parent(v)) - sum(children(parent(v)), na.rm=TRUE))`.
 
@@ -195,7 +195,7 @@ The `tl_eval` function evaluates its arguments for `tl_atmost(x)` and `tl_atleas
 
 ```{r}
 t1 <- treelabel(list(c("TCell" = 0.8)), tree)
-# These should both return `NA`
+# Ideally both function calls would return `NA`
 tl_eval(t1, CD4_TCell > CD8_TCell) 
 tl_eval(t1, CD4_TCell < CD8_TCell) 
 ```

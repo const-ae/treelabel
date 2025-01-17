@@ -35,7 +35,7 @@ annotations and can integrate annotations at different resolutions.
 Furthermore, `treelabel` supports uncertainty scores associated with a
 label. For example, most automatic cell type scoring tools (like
 [Azimuth](https://azimuth.hubmapconsortium.org/) or
-[celltypist](https://www.celltypist.org/), return a confidence score in
+[celltypist](https://www.celltypist.org/)), return a confidence score in
 addition to the cell type label. These scores enable a more precise
 selection of cells where you have sufficient confidence in the cell type
 label.
@@ -141,7 +141,7 @@ you can provide the annotations as a `list` or a `data.frame`
 ``` r
 lst <- list(
   c(BCell = 0.99, ImmuneCell = 1),
-  c(root = 1, EndothelialCell = 0.6),
+  c(root = 1, EndothelialCell = 0.65),
   c(CD4_TCell = 0.8, TCell = 0.95, ImmuneCell = 0.95),
   NULL, # will be treated as NA
   c(ImmuneCell = 0.4)
@@ -150,7 +150,7 @@ lst <- list(
 vec <- treelabel(lst, tree)
 vec
 #> <treelabel[5]>
-#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)       <NA>                 
+#> [1] BCell(0.99)           EndothelialCell(0.65) CD4_TCell(0.80)       <NA>                 
 #> [5] ImmuneCell(0.40)     
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 ```
@@ -185,23 +185,23 @@ R vector:
 ``` r
 vec
 #> <treelabel[5]>
-#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)       <NA>                 
+#> [1] BCell(0.99)           EndothelialCell(0.65) CD4_TCell(0.80)       <NA>                 
 #> [5] ImmuneCell(0.40)     
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 length(vec)
 #> [1] 5
 vec[2]
 #> <treelabel[1]>
-#> [1] EndothelialCell(0.60)
+#> [1] EndothelialCell(0.65)
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 vec[1:4]
 #> <treelabel[4]>
-#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)       <NA>                 
+#> [1] BCell(0.99)           EndothelialCell(0.65) CD4_TCell(0.80)       <NA>                 
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 c(vec, vec[1:3])
 #> <treelabel[8]>
-#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)       <NA>                 
-#> [5] ImmuneCell(0.40)      BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)      
+#> [1] BCell(0.99)           EndothelialCell(0.65) CD4_TCell(0.80)       <NA>                 
+#> [5] ImmuneCell(0.40)      BCell(0.99)           EndothelialCell(0.65) CD4_TCell(0.80)      
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 ```
 
@@ -218,9 +218,9 @@ root.
 
 ``` r
 tl_tree(vec)
-#> IGRAPH 9ec2fd5 DN-- 8 7 -- 
+#> IGRAPH 67461d7 DN-- 8 7 -- 
 #> + attr: name (v/c)
-#> + edges from 9ec2fd5 (vertex names):
+#> + edges from 67461d7 (vertex names):
 #> [1] root      ->ImmuneCell      root      ->EndothelialCell root      ->EpithelialCell 
 #> [4] ImmuneCell->TCell           ImmuneCell->BCell           TCell     ->CD4_TCell      
 #> [7] TCell     ->CD8_TCell
@@ -232,8 +232,8 @@ tl_tree_root(vec)
 
 The printing function builds on the `tl_name`, which returns the first
 non `NA` vertex with a score larger than `0`. We can change this
-threshold. For example, the *CD4_TCell* label does not pass the `0.9`
-threshold, but the *TCell* label does.
+threshold. For example, for the third cell the *CD4_TCell* label does
+not pass the `0.9` threshold, but the *TCell* label does.
 
 ``` r
 tibble(vec, tl_name(vec), tl_name(vec, threshold = 0.9))
@@ -241,13 +241,13 @@ tibble(vec, tl_name(vec), tl_name(vec, threshold = 0.9))
 #>                     vec `tl_name(vec)`  `tl_name(vec, threshold = 0.9)`
 #>                    <tl> <chr>           <chr>                          
 #> 1           BCell(0.99) BCell           BCell                          
-#> 2 EndothelialCell(0.60) EndothelialCell root                           
+#> 2 EndothelialCell(0.65) EndothelialCell root                           
 #> 3       CD4_TCell(0.80) CD4_TCell       TCell                          
 #> 4                    NA <NA>            <NA>                           
 #> 5      ImmuneCell(0.40) ImmuneCell      <NA>
 ```
 
-You can also evaluate logical expressions using `tl_eval`.
+You can also evaluate arbitrary expressions using `tl_eval`.
 
 ``` r
 tibble(vec) |> mutate(is_tcell = tl_eval(vec, TCell > 0.9))
@@ -255,7 +255,7 @@ tibble(vec) |> mutate(is_tcell = tl_eval(vec, TCell > 0.9))
 #>                     vec is_tcell
 #>                    <tl> <lgl>   
 #> 1           BCell(0.99) FALSE   
-#> 2 EndothelialCell(0.60) FALSE   
+#> 2 EndothelialCell(0.65) FALSE   
 #> 3       CD4_TCell(0.80) TRUE    
 #> 4                    NA NA      
 #> 5      ImmuneCell(0.40) FALSE
@@ -271,7 +271,7 @@ tibble(vec) |> mutate(maybe_tcell = tl_eval(vec, TCell > 0.2))
 #>                     vec maybe_tcell
 #>                    <tl> <lgl>      
 #> 1           BCell(0.99) FALSE      
-#> 2 EndothelialCell(0.60) NA         
+#> 2 EndothelialCell(0.65) NA         
 #> 3       CD4_TCell(0.80) TRUE       
 #> 4                    NA NA         
 #> 5      ImmuneCell(0.40) NA
@@ -285,15 +285,15 @@ each label, and the scores that were not specified are stored as `NA`.
 tl_score_matrix(vec)
 #>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell CD8_TCell
 #> [1,] 1.00       1.00              NA             NA    NA  0.99        NA        NA
-#> [2,] 1.00         NA             0.6             NA    NA    NA        NA        NA
+#> [2,] 1.00         NA            0.65             NA    NA    NA        NA        NA
 #> [3,] 0.95       0.95              NA             NA  0.95    NA       0.8        NA
 #> [4,]   NA         NA              NA             NA    NA    NA        NA        NA
 #> [5,] 0.40       0.40              NA             NA    NA    NA        NA        NA
 ```
 
 For each missing element, we can give a lower and upper bound for the
-value. For the fifth element the chance that it is an `ImmuneCell` is
-`tl_get(vec[5], "ImmuneCell")` = 0.4. This means that each child can
+value. For the fifth element the confidence that it is an `ImmuneCell`
+is `tl_get(vec[5], "ImmuneCell")` = 0.4. This means that each child can
 also be at most `0.4`.
 
 The general formula is that the score for a vertex `v` that is `NA` can
@@ -304,19 +304,19 @@ be at most (in pseudocode):
 # tl_atmost is clever
 tl_atmost(vec) |> tl_score_matrix()
 #>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell CD8_TCell
-#> [1,] 1.00       1.00             0.0            0.0  0.01  0.99      0.01      0.01
-#> [2,] 1.00       0.40             0.6            0.4  0.40  0.40      0.40      0.40
-#> [3,] 0.95       0.95             0.0            0.0  0.95  0.00      0.80      0.15
+#> [1,] 1.00       1.00            0.00           0.00  0.01  0.99      0.01      0.01
+#> [2,] 1.00       0.35            0.65           0.35  0.35  0.35      0.35      0.35
+#> [3,] 0.95       0.95            0.00           0.00  0.95  0.00      0.80      0.15
 #> [4,]   NA         NA              NA             NA    NA    NA        NA        NA
-#> [5,] 0.40       0.40             0.0            0.0  0.40  0.40      0.40      0.40
+#> [5,] 0.40       0.40            0.00           0.00  0.40  0.40      0.40      0.40
 # tl_atleast simply replaces `NA`'s with zeros
 tl_atleast(vec) |> tl_score_matrix()
 #>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell CD8_TCell
-#> [1,] 1.00       1.00             0.0              0  0.00  0.99       0.0         0
-#> [2,] 1.00       0.00             0.6              0  0.00  0.00       0.0         0
-#> [3,] 0.95       0.95             0.0              0  0.95  0.00       0.8         0
+#> [1,] 1.00       1.00            0.00              0  0.00  0.99       0.0         0
+#> [2,] 1.00       0.00            0.65              0  0.00  0.00       0.0         0
+#> [3,] 0.95       0.95            0.00              0  0.95  0.00       0.8         0
 #> [4,]   NA         NA              NA             NA    NA    NA        NA        NA
-#> [5,] 0.40       0.40             0.0              0  0.00  0.00       0.0         0
+#> [5,] 0.40       0.40            0.00              0  0.00  0.00       0.0         0
 ```
 
 The `tl_eval` function evaluates its arguments for `tl_atmost(x)` and
@@ -326,7 +326,7 @@ results if multiple label references occur in the expression.
 
 ``` r
 t1 <- treelabel(list(c("TCell" = 0.8)), tree)
-# These should both return `NA`
+# Ideally both function calls would return `NA`
 tl_eval(t1, CD4_TCell > CD8_TCell) 
 #> [1] FALSE
 tl_eval(t1, CD4_TCell < CD8_TCell) 
@@ -351,7 +351,7 @@ tibble(vec, vec2) |>
 #>                     vec                 vec2  arithmetic_mean   geometric_mean              rounding
 #>                    <tl>                 <tl>             <tl>             <tl>                  <tl>
 #> 1           BCell(0.99)          BCell(0.80)      BCell(0.90)      BCell(0.89)           BCell(1.00)
-#> 2 EndothelialCell(0.60) EpithelialCell(0.30)       root(0.65)       root(0.55) EndothelialCell(1.00)
+#> 2 EndothelialCell(0.65) EpithelialCell(0.30)       root(0.65)       root(0.55) EndothelialCell(1.00)
 #> 3       CD4_TCell(0.80)          TCell(0.90)      TCell(0.93)      TCell(0.92)       CD4_TCell(1.00)
 #> 4                    NA      CD8_TCell(0.20)               NA               NA                    NA
 #> 5      ImmuneCell(0.40)          TCell(0.80) ImmuneCell(0.60) ImmuneCell(0.57)                    NA
@@ -374,7 +374,7 @@ dat |> mutate(is_immune = tl_across(where(is_treelabel), ImmuneCell > 0.7))
 #>   cell_id                   vec                 vec2 is_immune$vec $vec2
 #>   <chr>                    <tl>                 <tl> <lgl>         <lgl>
 #> 1 cell_1            BCell(0.99)          BCell(0.80) TRUE          TRUE 
-#> 2 cell_2  EndothelialCell(0.60) EpithelialCell(0.30) FALSE         FALSE
+#> 2 cell_2  EndothelialCell(0.65) EpithelialCell(0.30) FALSE         FALSE
 #> 3 cell_3        CD4_TCell(0.80)          TCell(0.90) TRUE          TRUE 
 #> 4 cell_4                     NA      CD8_TCell(0.20) NA            FALSE
 #> 5 cell_5       ImmuneCell(0.40)          TCell(0.80) FALSE         TRUE
@@ -383,7 +383,7 @@ dat |> mutate(immune_counts = tl_sum_across(where(is_treelabel), ImmuneCell > 0.
 #>   cell_id                   vec                 vec2 immune_counts
 #>   <chr>                    <tl>                 <tl>         <dbl>
 #> 1 cell_1            BCell(0.99)          BCell(0.80)             2
-#> 2 cell_2  EndothelialCell(0.60) EpithelialCell(0.30)             0
+#> 2 cell_2  EndothelialCell(0.65) EpithelialCell(0.30)             0
 #> 3 cell_3        CD4_TCell(0.80)          TCell(0.90)             2
 #> 4 cell_4                     NA      CD8_TCell(0.20)             0
 #> 5 cell_5       ImmuneCell(0.40)          TCell(0.80)             1
@@ -392,7 +392,7 @@ dat |> mutate(mean_immune_score = tl_mean_across(where(is_treelabel), ImmuneCell
 #>   cell_id                   vec                 vec2 mean_immune_score
 #>   <chr>                    <tl>                 <tl>             <dbl>
 #> 1 cell_1            BCell(0.99)          BCell(0.80)             0.9  
-#> 2 cell_2  EndothelialCell(0.60) EpithelialCell(0.30)             0    
+#> 2 cell_2  EndothelialCell(0.65) EpithelialCell(0.30)             0    
 #> 3 cell_3        CD4_TCell(0.80)          TCell(0.90)             0.925
 #> 4 cell_4                     NA      CD8_TCell(0.20)             0.2  
 #> 5 cell_5       ImmuneCell(0.40)          TCell(0.80)             0.6
