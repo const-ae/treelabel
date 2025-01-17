@@ -15,3 +15,19 @@ test_that(".select_by_level works", {
   testthat::expect_equal(sel, sel2)
 })
 
+
+test_that("tl_name works", {
+  tree <- igraph::graph_from_literal(
+    Animal - Bird : Mammal,
+    Bird - Parrot : Eagle,
+    Mammal - Dog : Cat
+  )
+
+  char_vec <- c("Bird", "Mammal", "Parrot", "Cat")
+  vec <- treelabel(char_vec, tree, "Animal")
+  expect_equal(tl_name(vec), char_vec)
+
+  vec <- treelabel(list(c("Mammal" = 0.99, "Dog" = 0.7, "Cat" = 0.3)), tree, "Animal")
+  expect_equal(tl_name(vec), "Dog")
+})
+
