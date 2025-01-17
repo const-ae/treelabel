@@ -117,8 +117,8 @@ char_vec <- c("BCell", "EndothelialCell", "CD4_TCell", NA, "BCell", "EpithelialC
 vec <- treelabel(char_vec, tree = tree)
 vec
 #> <treelabel[7]>
-#> [1] BCell           EndothelialCell CD4_TCell       <NA>           
-#> [5] BCell           EpithelialCell  ImmuneCell     
+#> [1] BCell           EndothelialCell CD4_TCell       <NA>            BCell           EpithelialCell 
+#> [7] ImmuneCell     
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 ```
 
@@ -130,9 +130,8 @@ num_vec <- c("BCell" = 0.99, "EndothelialCell" = 0.6, "CD4_TCell" = 0.8, NA, "BC
 vec <- treelabel(num_vec, tree = tree)
 vec
 #> <treelabel[7]>
-#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)      
-#> [4] <NA>                  BCell(0.78)           EpithelialCell(0.90) 
-#> [7] ImmuneCell(0.40)     
+#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)       <NA>                 
+#> [5] BCell(0.78)           EpithelialCell(0.90)  ImmuneCell(0.40)     
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 ```
 
@@ -151,8 +150,8 @@ lst <- list(
 vec <- treelabel(lst, tree)
 vec
 #> <treelabel[5]>
-#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)      
-#> [4] <NA>                  ImmuneCell(0.40)     
+#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)       <NA>                 
+#> [5] ImmuneCell(0.40)     
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 ```
 
@@ -186,8 +185,8 @@ R vector:
 ``` r
 vec
 #> <treelabel[5]>
-#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)      
-#> [4] <NA>                  ImmuneCell(0.40)     
+#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)       <NA>                 
+#> [5] ImmuneCell(0.40)     
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 length(vec)
 #> [1] 5
@@ -197,14 +196,12 @@ vec[2]
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 vec[1:4]
 #> <treelabel[4]>
-#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)      
-#> [4] <NA>                 
+#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)       <NA>                 
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 c(vec, vec[1:3])
 #> <treelabel[8]>
-#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)      
-#> [4] <NA>                  ImmuneCell(0.40)      BCell(0.99)          
-#> [7] EndothelialCell(0.60) CD4_TCell(0.80)      
+#> [1] BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)       <NA>                 
+#> [5] ImmuneCell(0.40)      BCell(0.99)           EndothelialCell(0.60) CD4_TCell(0.80)      
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 ```
 
@@ -221,12 +218,11 @@ root.
 
 ``` r
 tl_tree(vec)
-#> IGRAPH 2f5be40 DN-- 8 7 -- 
+#> IGRAPH 9ec2fd5 DN-- 8 7 -- 
 #> + attr: name (v/c)
-#> + edges from 2f5be40 (vertex names):
-#> [1] root      ->ImmuneCell      root      ->EndothelialCell
-#> [3] root      ->EpithelialCell  ImmuneCell->TCell          
-#> [5] ImmuneCell->BCell           TCell     ->CD4_TCell      
+#> + edges from 9ec2fd5 (vertex names):
+#> [1] root      ->ImmuneCell      root      ->EndothelialCell root      ->EpithelialCell 
+#> [4] ImmuneCell->TCell           ImmuneCell->BCell           TCell     ->CD4_TCell      
 #> [7] TCell     ->CD8_TCell
 tl_tree_root(vec)
 #> [1] "root"
@@ -287,18 +283,12 @@ each label, and the scores that were not specified are stored as `NA`.
 
 ``` r
 tl_score_matrix(vec)
-#>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell
-#> [1,] 1.00       1.00              NA             NA    NA  0.99        NA
-#> [2,] 1.00         NA             0.6             NA    NA    NA        NA
-#> [3,] 0.95       0.95              NA             NA  0.95    NA       0.8
-#> [4,]   NA         NA              NA             NA    NA    NA        NA
-#> [5,] 0.40       0.40              NA             NA    NA    NA        NA
-#>      CD8_TCell
-#> [1,]        NA
-#> [2,]        NA
-#> [3,]        NA
-#> [4,]        NA
-#> [5,]        NA
+#>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell CD8_TCell
+#> [1,] 1.00       1.00              NA             NA    NA  0.99        NA        NA
+#> [2,] 1.00         NA             0.6             NA    NA    NA        NA        NA
+#> [3,] 0.95       0.95              NA             NA  0.95    NA       0.8        NA
+#> [4,]   NA         NA              NA             NA    NA    NA        NA        NA
+#> [5,] 0.40       0.40              NA             NA    NA    NA        NA        NA
 ```
 
 For each missing element, we can give a lower and upper bound for the
@@ -313,32 +303,20 @@ be at most (in pseudocode):
 ``` r
 # tl_atmost is clever
 tl_atmost(vec) |> tl_score_matrix()
-#>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell
-#> [1,] 1.00       1.00             0.0            0.0  0.01  0.99      0.01
-#> [2,] 1.00       0.40             0.6            0.4  0.40  0.40      0.40
-#> [3,] 0.95       0.95             0.0            0.0  0.95  0.00      0.80
-#> [4,]   NA         NA              NA             NA    NA    NA        NA
-#> [5,] 0.40       0.40             0.0            0.0  0.40  0.40      0.40
-#>      CD8_TCell
-#> [1,]      0.01
-#> [2,]      0.40
-#> [3,]      0.15
-#> [4,]        NA
-#> [5,]      0.40
+#>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell CD8_TCell
+#> [1,] 1.00       1.00             0.0            0.0  0.01  0.99      0.01      0.01
+#> [2,] 1.00       0.40             0.6            0.4  0.40  0.40      0.40      0.40
+#> [3,] 0.95       0.95             0.0            0.0  0.95  0.00      0.80      0.15
+#> [4,]   NA         NA              NA             NA    NA    NA        NA        NA
+#> [5,] 0.40       0.40             0.0            0.0  0.40  0.40      0.40      0.40
 # tl_atleast simply replaces `NA`'s with zeros
 tl_atleast(vec) |> tl_score_matrix()
-#>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell
-#> [1,] 1.00       1.00             0.0              0  0.00  0.99       0.0
-#> [2,] 1.00       0.00             0.6              0  0.00  0.00       0.0
-#> [3,] 0.95       0.95             0.0              0  0.95  0.00       0.8
-#> [4,]   NA         NA              NA             NA    NA    NA        NA
-#> [5,] 0.40       0.40             0.0              0  0.00  0.00       0.0
-#>      CD8_TCell
-#> [1,]         0
-#> [2,]         0
-#> [3,]         0
-#> [4,]        NA
-#> [5,]         0
+#>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell CD8_TCell
+#> [1,] 1.00       1.00             0.0              0  0.00  0.99       0.0         0
+#> [2,] 1.00       0.00             0.6              0  0.00  0.00       0.0         0
+#> [3,] 0.95       0.95             0.0              0  0.95  0.00       0.8         0
+#> [4,]   NA         NA              NA             NA    NA    NA        NA        NA
+#> [5,] 0.40       0.40             0.0              0  0.00  0.00       0.0         0
 ```
 
 The `tl_eval` function evaluates its arguments for `tl_atmost(x)` and
@@ -370,14 +348,13 @@ tibble(vec, vec2) |>
          geometric_mean = (vec * vec2)^(1/2),
          rounding = round(vec))
 #> # A tibble: 5 × 5
-#>                     vec                 vec2  arithmetic_mean   geometric_mean
-#>                    <tl>                 <tl>             <tl>             <tl>
-#> 1           BCell(0.99)          BCell(0.80)      BCell(0.90)      BCell(0.89)
-#> 2 EndothelialCell(0.60) EpithelialCell(0.30)       root(0.65)       root(0.55)
-#> 3       CD4_TCell(0.80)          TCell(0.90)      TCell(0.93)      TCell(0.92)
-#> 4                    NA      CD8_TCell(0.20)               NA               NA
-#> 5      ImmuneCell(0.40)          TCell(0.80) ImmuneCell(0.60) ImmuneCell(0.57)
-#> # ℹ 1 more variable: rounding <tl>
+#>                     vec                 vec2  arithmetic_mean   geometric_mean              rounding
+#>                    <tl>                 <tl>             <tl>             <tl>                  <tl>
+#> 1           BCell(0.99)          BCell(0.80)      BCell(0.90)      BCell(0.89)           BCell(1.00)
+#> 2 EndothelialCell(0.60) EpithelialCell(0.30)       root(0.65)       root(0.55) EndothelialCell(1.00)
+#> 3       CD4_TCell(0.80)          TCell(0.90)      TCell(0.93)      TCell(0.92)       CD4_TCell(1.00)
+#> 4                    NA      CD8_TCell(0.20)               NA               NA                    NA
+#> 5      ImmuneCell(0.40)          TCell(0.80) ImmuneCell(0.60) ImmuneCell(0.57)                    NA
 ```
 
 ## Consensus construction
@@ -449,24 +426,21 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#>  [1] lubridate_1.9.3  forcats_1.0.0    stringr_1.5.1    dplyr_1.1.4     
-#>  [5] purrr_1.0.2      readr_2.1.5      tidyr_1.3.1      tibble_3.2.1    
-#>  [9] ggplot2_3.5.1    tidyverse_2.0.0  treelabel_0.0.3  testthat_3.2.1.1
+#>  [1] lubridate_1.9.3  forcats_1.0.0    stringr_1.5.1    dplyr_1.1.4      purrr_1.0.2     
+#>  [6] readr_2.1.5      tidyr_1.3.1      tibble_3.2.1     ggplot2_3.5.1    tidyverse_2.0.0 
+#> [11] treelabel_0.0.3  testthat_3.2.1.1
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] generics_0.1.3    utf8_1.2.4        stringi_1.8.4     hms_1.1.3        
-#>  [5] digest_0.6.37     magrittr_2.0.3    timechange_0.3.0  evaluate_1.0.1   
-#>  [9] grid_4.4.1        pkgload_1.4.0     fastmap_1.2.0     rprojroot_2.0.4  
-#> [13] pkgbuild_1.4.5    sessioninfo_1.2.2 brio_1.1.5        urlchecker_1.0.1 
-#> [17] promises_1.3.1    fansi_1.0.6       scales_1.3.0      cli_3.6.3        
-#> [21] shiny_1.9.1       rlang_1.1.4       munsell_0.5.1     ellipsis_0.3.2   
-#> [25] remotes_2.5.0     withr_3.0.2       cachem_1.1.0      yaml_2.3.10      
-#> [29] devtools_2.4.5    tools_4.4.1       tzdb_0.4.0        memoise_2.0.1    
-#> [33] colorspace_2.1-1  httpuv_1.6.15     vctrs_0.6.5       R6_2.5.1         
-#> [37] mime_0.12         matrixStats_1.4.1 lifecycle_1.0.4   fs_1.6.5         
-#> [41] htmlwidgets_1.6.4 usethis_3.1.0     miniUI_0.1.1.1    pkgconfig_2.0.3  
-#> [45] desc_1.4.3        pillar_1.9.0      later_1.4.0       gtable_0.3.6     
-#> [49] glue_1.8.0        profvis_0.4.0     Rcpp_1.0.13-1     tidyselect_1.2.1 
-#> [53] xfun_0.49         rstudioapi_0.17.1 knitr_1.49        xtable_1.8-4     
-#> [57] htmltools_0.5.8.1 igraph_2.1.1      rmarkdown_2.29    compiler_4.4.1
+#>  [1] generics_0.1.3    utf8_1.2.4        stringi_1.8.4     hms_1.1.3         digest_0.6.37    
+#>  [6] magrittr_2.0.3    timechange_0.3.0  evaluate_1.0.1    grid_4.4.1        pkgload_1.4.0    
+#> [11] fastmap_1.2.0     rprojroot_2.0.4   pkgbuild_1.4.5    sessioninfo_1.2.2 brio_1.1.5       
+#> [16] urlchecker_1.0.1  promises_1.3.1    fansi_1.0.6       scales_1.3.0      cli_3.6.3        
+#> [21] shiny_1.9.1       rlang_1.1.4       munsell_0.5.1     ellipsis_0.3.2    remotes_2.5.0    
+#> [26] withr_3.0.2       cachem_1.1.0      yaml_2.3.10       devtools_2.4.5    tools_4.4.1      
+#> [31] tzdb_0.4.0        memoise_2.0.1     colorspace_2.1-1  httpuv_1.6.15     vctrs_0.6.5      
+#> [36] R6_2.5.1          mime_0.12         matrixStats_1.4.1 lifecycle_1.0.4   fs_1.6.5         
+#> [41] htmlwidgets_1.6.4 usethis_3.1.0     miniUI_0.1.1.1    pkgconfig_2.0.3   desc_1.4.3       
+#> [46] pillar_1.9.0      later_1.4.0       gtable_0.3.6      glue_1.8.0        profvis_0.4.0    
+#> [51] Rcpp_1.0.13-1     tidyselect_1.2.1  xfun_0.49         rstudioapi_0.17.1 knitr_1.49       
+#> [56] xtable_1.8-4      htmltools_0.5.8.1 igraph_2.1.1      rmarkdown_2.29    compiler_4.4.1
 ```
