@@ -218,9 +218,9 @@ root.
 
 ``` r
 tl_tree(vec)
-#> IGRAPH 67461d7 DN-- 8 7 -- 
+#> IGRAPH 390a049 DN-- 8 7 -- 
 #> + attr: name (v/c)
-#> + edges from 67461d7 (vertex names):
+#> + edges from 390a049 (vertex names):
 #> [1] root      ->ImmuneCell      root      ->EndothelialCell root      ->EpithelialCell 
 #> [4] ImmuneCell->TCell           ImmuneCell->BCell           TCell     ->CD4_TCell      
 #> [7] TCell     ->CD8_TCell
@@ -404,6 +404,60 @@ dat |> filter(tl_if_all(where(is_treelabel), ImmuneCell > 0.7))
 #> 2 cell_3  CD4_TCell(0.80) TCell(0.90)
 ```
 
+## Pretty plotting
+
+The following visualization is inspired by the default tree
+visualization in D3.
+
+``` r
+#' Calculate layout of tree using igraph and return results as two tibbles.
+prepare_tree_for_plotting <- function(tree, tree_root = "root"){
+  tree <- .make_tree(tree, root = tree_root)
+  
+  layout <- igraph::layout_as_tree(tree, root = "root")
+  
+  children <- lapply(igraph::V(tree), \(v){
+    igraph::neighbors(tree, v, mode = "out")$name
+  })
+  
+  vertices <- igraph::V(tree)$name
+  nodes <- tibble(node = vertices,
+         distance_to_root = max(layout[,2]) - layout[,2],
+         position = layout[,1],
+         is_leaf = vapply(children, \(x) length(x) == 0, FUN.VALUE = logical(1L)))
+  
+  edges <- edges <- tibble(node = vertices,
+       child = unname(children)) |>
+    unnest(child) |>
+    left_join(nodes, by = c("node" = "node")) |>
+    left_join(nodes, by = c("child" = "node"), suffix = c(".node", ".child"))
+
+  list(nodes = nodes, edges = edges)
+}
+```
+
+Make the plot. The [ggbezier](https://github.com/const-ae/ggbezier) is
+not on CRAN yet.
+
+``` r
+pl_tree <- prepare_tree_for_plotting(tree)
+
+ggplot(data = pl_tree$nodes, aes(x = distance_to_root, y = position)) +
+  ggbezier::geom_bezier(data = pl_tree$edges |>  pivot_longer(c(ends_with(".node"), ends_with(".child")), names_sep = "\\.", names_to = c(".value", "side")),
+                        aes(x = distance_to_root, y = position, x_handle1 = distance_to_root - 0.4, 
+                            x_handle2 = distance_to_root + 0.4, y_handle1 = position, y_handle2 = position, group = paste0(node, "-", child)),
+                        show_handles = FALSE, color = "lightgrey", linewidth = 0.3) +
+  geom_point(aes(color = I(ifelse(is_leaf, "lightgrey", "#4e4e4e")))) +
+  shadowtext::geom_shadowtext(aes(label = node, hjust = ifelse(is_leaf, 0, 1), x = distance_to_root + ifelse(is_leaf, 0.03, -0.03)), 
+                              color = "black", bg.colour = "white") +
+  scale_x_continuous(expand = expansion(add = c(0.5, 0.9))) +
+  theme_void()
+#> Warning in ggbezier::geom_bezier(data = pivot_longer(pl_tree$edges, c(ends_with(".node"), :
+#> Ignoring unknown aesthetics: x_handle1, x_handle2, y_handle1, and y_handle2
+```
+
+<img src="man/figures/README-unnamed-chunk-20-1.png" width="100%" />
+
 # Session Info
 
 ``` r
@@ -431,16 +485,17 @@ sessionInfo()
 #> [11] treelabel_0.0.3  testthat_3.2.1.1
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] generics_0.1.3    utf8_1.2.4        stringi_1.8.4     hms_1.1.3         digest_0.6.37    
-#>  [6] magrittr_2.0.3    timechange_0.3.0  evaluate_1.0.1    grid_4.4.1        pkgload_1.4.0    
-#> [11] fastmap_1.2.0     rprojroot_2.0.4   pkgbuild_1.4.5    sessioninfo_1.2.2 brio_1.1.5       
-#> [16] urlchecker_1.0.1  promises_1.3.1    fansi_1.0.6       scales_1.3.0      cli_3.6.3        
-#> [21] shiny_1.9.1       rlang_1.1.4       munsell_0.5.1     ellipsis_0.3.2    remotes_2.5.0    
-#> [26] withr_3.0.2       cachem_1.1.0      yaml_2.3.10       devtools_2.4.5    tools_4.4.1      
-#> [31] tzdb_0.4.0        memoise_2.0.1     colorspace_2.1-1  httpuv_1.6.15     vctrs_0.6.5      
-#> [36] R6_2.5.1          mime_0.12         matrixStats_1.4.1 lifecycle_1.0.4   fs_1.6.5         
-#> [41] htmlwidgets_1.6.4 usethis_3.1.0     miniUI_0.1.1.1    pkgconfig_2.0.3   desc_1.4.3       
-#> [46] pillar_1.9.0      later_1.4.0       gtable_0.3.6      glue_1.8.0        profvis_0.4.0    
-#> [51] Rcpp_1.0.13-1     tidyselect_1.2.1  xfun_0.49         rstudioapi_0.17.1 knitr_1.49       
-#> [56] xtable_1.8-4      htmltools_0.5.8.1 igraph_2.1.1      rmarkdown_2.29    compiler_4.4.1
+#>  [1] generics_0.1.3    utf8_1.2.4        stringi_1.8.4     shadowtext_0.1.4  hms_1.1.3        
+#>  [6] digest_0.6.37     magrittr_2.0.3    timechange_0.3.0  evaluate_1.0.1    grid_4.4.1       
+#> [11] pkgload_1.4.0     fastmap_1.2.0     rprojroot_2.0.4   pkgbuild_1.4.5    sessioninfo_1.2.2
+#> [16] brio_1.1.5        urlchecker_1.0.1  promises_1.3.1    fansi_1.0.6       scales_1.3.0     
+#> [21] cli_3.6.3         shiny_1.9.1       rlang_1.1.4       munsell_0.5.1     ellipsis_0.3.2   
+#> [26] remotes_2.5.0     withr_3.0.2       cachem_1.1.0      yaml_2.3.10       devtools_2.4.5   
+#> [31] tools_4.4.1       tzdb_0.4.0        memoise_2.0.1     colorspace_2.1-1  httpuv_1.6.15    
+#> [36] vctrs_0.6.5       R6_2.5.1          mime_0.12         matrixStats_1.4.1 lifecycle_1.0.4  
+#> [41] fs_1.6.5          htmlwidgets_1.6.4 usethis_3.1.0     miniUI_0.1.1.1    pkgconfig_2.0.3  
+#> [46] desc_1.4.3        pillar_1.9.0      later_1.4.0       gtable_0.3.6      glue_1.8.0       
+#> [51] profvis_0.4.0     Rcpp_1.0.13-1     tidyselect_1.2.1  xfun_0.49         rstudioapi_0.17.1
+#> [56] knitr_1.49        farver_2.1.2      ggbezier_0.1.0    xtable_1.8-4      htmltools_0.5.8.1
+#> [61] igraph_2.1.1      labeling_0.4.3    rmarkdown_2.29    compiler_4.4.1
 ```
