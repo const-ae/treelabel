@@ -50,9 +50,8 @@
   colnames <- colnames(data)
   tree <- .get_tree(x)
   dists <- .get_distances(x)
-  children <- lapply(igraph::V(tree), \(v){
-    match(igraph::neighbors(tree, v, mode = "out")$name, colnames)
-  })
+  children <- .get_children(x)
+
   for(idx in order(dists)){
     data[is.na(data[,idx]), children[[idx]]] <- NA
   }
