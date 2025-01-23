@@ -51,8 +51,7 @@ test_that("tl_atmost works", {
 })
 
 
-test_that("tl_update works", {
-  skip("tl_update is not ready yet")
+test_that("tl_modify works", {
   tree <- igraph::graph_from_literal(
     Animal - Bird : Mammal,
     Bird - Parrot : Eagle,
@@ -64,27 +63,37 @@ test_that("tl_update works", {
     list(c(Animal = 1, Eagle = 0.3, Bird = 0.9, Mammal = 0.01),
          c(Animal = 1, Mammal = 0.8, Dog = 0.7),
          NA,
-         c(Bird = 1)
+         c(Animal = 1, Mammal = 0.8, Dog = 0.2, Cat = 0.6)
     ), tree = tree, tree_root = "Animal")
 
-  tl_update(vec, Mammal = Mammal * 3) |> tl_score_matrix()
+  original_mat <- vec |> tl_score_matrix()
 
-
-
+  expected_mat <- original_mat
+  expected_mat[,"Mammal"] <- expected_mat[,"Mammal"] * 3
+  expect_equal(tl_modify(vec, Mammal = Mammal * 3) |> tl_score_matrix(), expected_mat)
   var <- "Mammal"
-  tl_update(vec, {{var}} := 3) |> tl_score_matrix()
+  expect_equal(tl_modify(vec, {{var}} := Mammal * 3) |> tl_score_matrix(), expected_mat)
 
-  tl_update(vec,
-            Mammal = 4,
-            data.frame(
-              Mammal = Mammal * 3,
-              Bird = 17
-            )) |> tl_score_matrix()
+  expected_mat <- original_mat
+  expected_mat[,"Mammal"] <- NA
+  expect_equal(tl_modify(vec, Mammal = NA, .propagate_NAs_down = FALSE) |> tl_score_matrix(), expected_mat)
+  expected_mat[,"Dog"] <- NA
+  expected_mat[,"Cat"] <- NA
+  expect_equal(tl_modify(vec, Mammal = NA) |> tl_score_matrix(), expected_mat)
 
-  tl_update(vec,
+  expected_mat <- original_mat
+  expected_mat[,"Mammal"] <- 4
+  expected_mat[,"Bird"] <- 17
+  expected_mat[,"Dog"] <- 42
+  expected_mat[3,] <- NA
+  expect_equal(tl_modify(vec, Mammal = 4, data.frame(Bird = 17, Dog = 42)) |> tl_score_matrix(),
+               expected_mat)
+
+
+  skip("tl_modify is not ready for more complicated cases")
+  tl_modify(vec,
             Mammal = Mammal * 3,
             x = tl_along(children(Mammal), \(x) x * 3))
-  tl_eval(x, children(Mammal)  / rowSums(children(Mammal)))
 
   tl_map <- function(.vertices, expr){
 

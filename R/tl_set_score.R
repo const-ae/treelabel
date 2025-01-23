@@ -23,26 +23,38 @@
 
 #' Modify the treelabel values
 #'
-#' @param ... tidyeval dots.
+#' @param ... tidyeval dots which work like `dplyr::mutate()`.
+#' @param .propagate_NAs_down boolean that decides if the score of children is to `NA` if
+#'   their parents score is `NA`.
+#' @inheritParams treelabel
 #'
-tl_update <- function(x, ...){
+#' @returns the modified treelabel vector
+#' @export
+tl_modify <- function(x, ..., .propagate_NAs_down = TRUE){
   tree <- .get_tree(x)
   vertex_names <- .tree_vertex_names(tree)
   vars <- rlang::enquos(..., .named = FALSE)
 
   new_names <- names(vars)
   if(! all(new_names == "" | new_names %in% vertex_names)){
-    wrong_name <- which(! new_names %in% vertex_names)
+    wrong_name <- new_names[which(! new_names %in% vertex_names)]
     stop("Assigning to '", toString(wrong_name, width = 30), "' is not possible as they are not vertices.")
   }
-  mat <- tl_score_matrix(x)
   for(idx in seq_along(vars)){
-
     n <- new_names[idx]
     res <- .eval_impl(x, expr = !!vars[[idx]])
 
+    mat <- tl_score_matrix(x)
     if(is.data.frame(res) || is.matrix(res)){
       res <- as.matrix(res)
+      if(nrow(res) != 1 && nrow(res) != nrow(mat)){
+        stop("The length of the value must be 1 or ", nrow(mat), " and not ", nrow(res))
+      }
+      if(nrow(res) == 1){
+        # Recycle to match nrow of mat
+        res <- matrix(res, nrow = nrow(mat), ncol = ncol(res), byrow = TRUE,
+                      dimnames = list(NULL, colnames(res)))
+      }
       nn <- colnames(res)
       if(n != ""){
         stop("The name for the ", idx, " element must be empty (not '", n, "'),",
@@ -57,6 +69,9 @@ tl_update <- function(x, ...){
       mat[,n] <- res
     }
     x <- .treelabel_like(mat, x)
+    if(.propagate_NAs_down){
+      x <- .propagate_NAs_down(x)
+    }
   }
   x
 }
