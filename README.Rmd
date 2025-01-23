@@ -44,7 +44,7 @@ This package does not provide any functionality to:
 - Assign cell types to cells based on the expression profile. Use any of the many available automatic cell type scoring tools (see for [this](https://github.com/seandavi/awesome-single-cell?tab=readme-ov-file#cell-type-identification-and-classification) list for a selection) or do it manually using clustering plus marker gene expression.
 - Automatically harmonize cell type labels from different references (e.g., figure out that the `NK cells` from one dataset correspond to the `Natural killer cells` from another). You will probably have to do this manually. There is an example further down in the README.
 - Provide the optimal cell type tree. You will probably want to define the tree for your analysis depending on the annotations available to you. As a reference, look at the [cell ontology project](https://cell-ontology.github.io/), which provides a large database of cell type label relationships and is used by the Human Cell Atlas.
-- Plot trees. For demonstration purposes, we will use the `igraph` plots (which are not very pretty), and for the plot on the top, I used the [D3](https://d3js.org/) library from Javascript (which is cumbersome to use from R). In the long term, I will probably want to develop additional tooling to improve this, but such code would probably live outside this package.
+- Plot trees. For demonstration purposes, we will use the `igraph` plots (which are not very pretty), and for the plot on the top, I used the [D3](https://d3js.org/) library from Javascript (which is cumbersome to use from R). See the end of the README for an example how to make pretty plots of trees with ggplot2.
 
 ## Installation
 
@@ -237,7 +237,7 @@ The following visualization is inspired by the default tree visualization in D3.
 prepare_tree_for_plotting <- function(tree, tree_root = "root"){
   tree <- .make_tree(tree, root = tree_root)
   
-  layout <- igraph::layout_as_tree(tree, root = "root")
+  layout <- igraph::layout_as_tree(tree, root = tree_root)
   
   children <- lapply(igraph::V(tree), \(v){
     igraph::neighbors(tree, v, mode = "out")$name
@@ -261,7 +261,7 @@ prepare_tree_for_plotting <- function(tree, tree_root = "root"){
 
 Make the plot. The [ggbezier](https://github.com/const-ae/ggbezier) is not on CRAN yet.
 
-```{r, fig.height=2}
+```{r ggplot_code, fig.height=2}
 pl_tree <- prepare_tree_for_plotting(tree)
 
 ggplot(data = pl_tree$nodes, aes(x = distance_to_root, y = position)) +
