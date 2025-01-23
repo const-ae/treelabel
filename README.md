@@ -71,9 +71,8 @@ This package does not provide any functionality to:
 - Plot trees. For demonstration purposes, we will use the `igraph` plots
   (which are not very pretty), and for the plot on the top, I used the
   [D3](https://d3js.org/) library from Javascript (which is cumbersome
-  to use from R). In the long term, I will probably want to develop
-  additional tooling to improve this, but such code would probably live
-  outside this package.
+  to use from R). See the end of the README for an example how to make
+  pretty plots of trees with ggplot2.
 
 ## Installation
 
@@ -218,9 +217,9 @@ root.
 
 ``` r
 tl_tree(vec)
-#> IGRAPH 390a049 DN-- 8 7 -- 
+#> IGRAPH c2c436b DN-- 8 7 -- 
 #> + attr: name (v/c)
-#> + edges from 390a049 (vertex names):
+#> + edges from c2c436b (vertex names):
 #> [1] root      ->ImmuneCell      root      ->EndothelialCell root      ->EpithelialCell 
 #> [4] ImmuneCell->TCell           ImmuneCell->BCell           TCell     ->CD4_TCell      
 #> [7] TCell     ->CD8_TCell
@@ -357,6 +356,75 @@ tibble(vec, vec2) |>
 #> 5      ImmuneCell(0.40)          TCell(0.80) ImmuneCell(0.60) ImmuneCell(0.57)                    NA
 ```
 
+## Modification
+
+You can modify the elements of a `treelabel` vector. The easiest is way
+is to use `if_else` (note `ifelse` does not work!!) and mix the content
+of two vectors. Alternatively, you can set elements to `NA`.
+
+``` r
+high_quality_res <- c(TRUE, FALSE, FALSE, FALSE, TRUE)
+# Combine two vectors or set one to 'NA'
+if_else(high_quality_res, vec, vec2)
+#> <treelabel[5]>
+#> [1] BCell(0.99)          EpithelialCell(0.30) TCell(0.90)          CD8_TCell(0.20)     
+#> [5] ImmuneCell(0.40)    
+#> # Tree: root, ImmuneCell, TCell, Endothelial....
+if_else(high_quality_res, vec, NA)
+#> <treelabel[5]>
+#> [1] BCell(0.99)      <NA>             <NA>             <NA>             ImmuneCell(0.40)
+#> # Tree: root, ImmuneCell, TCell, Endothelial....
+```
+
+If you want to modify the content within a tree, that is change the
+value of individual vertices, you can use the `tl_modify` function.
+
+``` r
+# The effect of tl_modify is best understood by considering the underlying score matrix
+tl_score_matrix(vec)[,1:3]
+#>      root ImmuneCell EndothelialCell
+#> [1,] 1.00       1.00              NA
+#> [2,] 1.00         NA            0.65
+#> [3,] 0.95       0.95              NA
+#> [4,]   NA         NA              NA
+#> [5,] 0.40       0.40              NA
+tl_score_matrix(tl_modify(vec, ImmuneCell = 0.3))[,1:3]
+#>      root ImmuneCell EndothelialCell
+#> [1,] 1.00        0.3              NA
+#> [2,] 1.00        0.3            0.65
+#> [3,] 0.95        0.3              NA
+#> [4,]   NA         NA              NA
+#> [5,] 0.40        0.3              NA
+tl_score_matrix(tl_modify(vec, ImmuneCell = ImmuneCell / 3))[,1:3]
+#>      root ImmuneCell EndothelialCell
+#> [1,] 1.00  0.3333333              NA
+#> [2,] 1.00         NA            0.65
+#> [3,] 0.95  0.3166667              NA
+#> [4,]   NA         NA              NA
+#> [5,] 0.40  0.1333333              NA
+tl_score_matrix(tl_modify(vec, ImmuneCell = root - ImmuneCell/3))[,1:3]
+#>      root ImmuneCell EndothelialCell
+#> [1,] 1.00  0.6666667              NA
+#> [2,] 1.00         NA            0.65
+#> [3,] 0.95  0.6333333              NA
+#> [4,]   NA         NA              NA
+#> [5,] 0.40  0.2666667              NA
+tl_score_matrix(tl_modify(vec, ImmuneCell = NA, .propagate_NAs_down = TRUE))
+#>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell CD8_TCell
+#> [1,] 1.00         NA              NA             NA    NA    NA        NA        NA
+#> [2,] 1.00         NA            0.65             NA    NA    NA        NA        NA
+#> [3,] 0.95         NA              NA             NA    NA    NA        NA        NA
+#> [4,]   NA         NA              NA             NA    NA    NA        NA        NA
+#> [5,] 0.40         NA              NA             NA    NA    NA        NA        NA
+tl_score_matrix(tl_modify(vec, ImmuneCell = NA, .propagate_NAs_down = FALSE))
+#>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell CD8_TCell
+#> [1,] 1.00         NA              NA             NA    NA  0.99        NA        NA
+#> [2,] 1.00         NA            0.65             NA    NA    NA        NA        NA
+#> [3,] 0.95         NA              NA             NA  0.95    NA       0.8        NA
+#> [4,]   NA         NA              NA             NA    NA    NA        NA        NA
+#> [5,] 0.40         NA              NA             NA    NA    NA        NA        NA
+```
+
 ## Consensus construction
 
 `treelabel` provides functions to make it easy to apply expression
@@ -414,7 +482,7 @@ visualization in D3.
 prepare_tree_for_plotting <- function(tree, tree_root = "root"){
   tree <- .make_tree(tree, root = tree_root)
   
-  layout <- igraph::layout_as_tree(tree, root = "root")
+  layout <- igraph::layout_as_tree(tree, root = tree_root)
   
   children <- lapply(igraph::V(tree), \(v){
     igraph::neighbors(tree, v, mode = "out")$name
@@ -456,7 +524,7 @@ ggplot(data = pl_tree$nodes, aes(x = distance_to_root, y = position)) +
 #> Ignoring unknown aesthetics: x_handle1, x_handle2, y_handle1, and y_handle2
 ```
 
-<img src="man/figures/README-unnamed-chunk-20-1.png" width="100%" />
+<img src="man/figures/README-ggplot_code-1.png" width="100%" />
 
 # Session Info
 

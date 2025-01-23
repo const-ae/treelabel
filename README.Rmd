@@ -201,7 +201,6 @@ tl_eval(t1, CD4_TCell < CD8_TCell)
 ```
 
 
-
 ## Arithmetic
 
 You can combine two vectors or summarize across elements. You can do whatever calculations you want, and `treelabel` will try to make the right thing happen. You can also do problematic things like produce negative values. `treelabel` currently does not stop you, but this breaks one of the assumptions of `treelabel`.
@@ -213,6 +212,31 @@ tibble(vec, vec2) |>
          geometric_mean = (vec * vec2)^(1/2),
          rounding = round(vec))
 ```
+
+## Modification
+
+You can modify the elements of a `treelabel` vector. The easiest is way is to use `if_else` (note `ifelse` does not work!!) and mix the content of two vectors. Alternatively, you can set elements to `NA`.
+
+```{r}
+high_quality_res <- c(TRUE, FALSE, FALSE, FALSE, TRUE)
+# Combine two vectors or set one to 'NA'
+if_else(high_quality_res, vec, vec2)
+if_else(high_quality_res, vec, NA)
+```
+
+If you want to modify the content within a tree, that is change the value of individual vertices, you can use the `tl_modify` function.
+
+```{r}
+# The effect of tl_modify is best understood by considering the underlying score matrix
+tl_score_matrix(vec)[,1:3]
+tl_score_matrix(tl_modify(vec, ImmuneCell = 0.3))[,1:3]
+tl_score_matrix(tl_modify(vec, ImmuneCell = ImmuneCell / 3))[,1:3]
+tl_score_matrix(tl_modify(vec, ImmuneCell = root - ImmuneCell/3))[,1:3]
+tl_score_matrix(tl_modify(vec, ImmuneCell = NA, .propagate_NAs_down = TRUE))
+tl_score_matrix(tl_modify(vec, ImmuneCell = NA, .propagate_NAs_down = FALSE))
+```
+
+
 
 ## Consensus construction
 
