@@ -178,5 +178,34 @@ test_that("propagation works", {
   lapply(res, \(x) .get_distances(x))[1:5]
 })
 
+test_that("tl_modify_tree works", {
+  tree <- igraph::graph_from_literal(
+    Animal - Bird : Mammal,
+    Bird - Parrot : Eagle,
+    Mammal - Dog : Cat
+  )
+  score_list <- list(
+    c(Eagle = 0.8, Parrot = 0.1),
+    c(Eagle = 0.8, Parrot = 0.1, Bird = 0.1)
+  )
+  vec <- treelabel(score_list, tree = tree, tree_root = "Animal")
 
+  sub_tree <- igraph::graph_from_literal(
+    Animal - Bird : Mammal
+  )
+  vec_mod <- tl_modify_tree(vec, new_tree = sub_tree)
+  expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,1:3])
+
+  sub_tree <- igraph::graph_from_literal(
+    Animal - Parrot : Eagle : Dog : Cat
+  )
+  vec_mod <- tl_modify_tree(vec, new_tree = sub_tree)
+  expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,c(1, 4:7)])
+
+  sub_tree <- igraph::graph_from_literal(
+    root - Parrot : Eagle : Dog : Cat
+  )
+  vec_mod <- tl_modify_tree(vec, new_tree = sub_tree, tree_root = "root")
+  expect_equal(tl_score_matrix(vec_mod), cbind(root = 0.9, tl_score_matrix(vec)[,4:7]))
+})
 

@@ -236,6 +236,16 @@ tl_score_matrix(tl_modify(vec, ImmuneCell = NA, .propagate_NAs_down = TRUE))
 tl_score_matrix(tl_modify(vec, ImmuneCell = NA, .propagate_NAs_down = FALSE))
 ```
 
+If we want to subset the values to a subset of the nodes, you can use the `tl_modify_tree` function.
+
+```{r}
+subtree <- igraph::graph_from_literal(
+  root - CD4_TCell : CD8_TCell : EndothelialCell : EpithelialCell
+)
+
+tl_score_matrix(vec)
+tl_modify_tree(vec, subtree) |> tl_score_matrix()
+```
 
 
 ## Consensus construction

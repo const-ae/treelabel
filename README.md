@@ -217,9 +217,9 @@ root.
 
 ``` r
 tl_tree(vec)
-#> IGRAPH c2c436b DN-- 8 7 -- 
+#> IGRAPH dd8077c DN-- 8 7 -- 
 #> + attr: name (v/c)
-#> + edges from c2c436b (vertex names):
+#> + edges from dd8077c (vertex names):
 #> [1] root      ->ImmuneCell      root      ->EndothelialCell root      ->EpithelialCell 
 #> [4] ImmuneCell->TCell           ImmuneCell->BCell           TCell     ->CD4_TCell      
 #> [7] TCell     ->CD8_TCell
@@ -425,6 +425,30 @@ tl_score_matrix(tl_modify(vec, ImmuneCell = NA, .propagate_NAs_down = FALSE))
 #> [5,] 0.40         NA              NA             NA    NA    NA        NA        NA
 ```
 
+If we want to subset the values to a subset of the nodes, you can use
+the `tl_modify_tree` function.
+
+``` r
+subtree <- igraph::graph_from_literal(
+  root - CD4_TCell : CD8_TCell : EndothelialCell : EpithelialCell
+)
+
+tl_score_matrix(vec)
+#>      root ImmuneCell EndothelialCell EpithelialCell TCell BCell CD4_TCell CD8_TCell
+#> [1,] 1.00       1.00              NA             NA    NA  0.99        NA        NA
+#> [2,] 1.00         NA            0.65             NA    NA    NA        NA        NA
+#> [3,] 0.95       0.95              NA             NA  0.95    NA       0.8        NA
+#> [4,]   NA         NA              NA             NA    NA    NA        NA        NA
+#> [5,] 0.40       0.40              NA             NA    NA    NA        NA        NA
+tl_modify_tree(vec, subtree) |> tl_score_matrix()
+#>      root CD4_TCell CD8_TCell EndothelialCell EpithelialCell
+#> [1,] 1.00        NA        NA              NA             NA
+#> [2,] 1.00        NA        NA            0.65             NA
+#> [3,] 0.95       0.8        NA              NA             NA
+#> [4,]   NA        NA        NA              NA             NA
+#> [5,] 0.40        NA        NA              NA             NA
+```
+
 ## Consensus construction
 
 `treelabel` provides functions to make it easy to apply expression
@@ -550,7 +574,7 @@ sessionInfo()
 #> other attached packages:
 #>  [1] lubridate_1.9.3  forcats_1.0.0    stringr_1.5.1    dplyr_1.1.4      purrr_1.0.2     
 #>  [6] readr_2.1.5      tidyr_1.3.1      tibble_3.2.1     ggplot2_3.5.1    tidyverse_2.0.0 
-#> [11] treelabel_0.0.3  testthat_3.2.1.1
+#> [11] treelabel_0.0.4  testthat_3.2.1.1
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] generics_0.1.3    utf8_1.2.4        stringi_1.8.4     shadowtext_0.1.4  hms_1.1.3        
@@ -563,7 +587,7 @@ sessionInfo()
 #> [36] vctrs_0.6.5       R6_2.5.1          mime_0.12         matrixStats_1.4.1 lifecycle_1.0.4  
 #> [41] fs_1.6.5          htmlwidgets_1.6.4 usethis_3.1.0     miniUI_0.1.1.1    pkgconfig_2.0.3  
 #> [46] desc_1.4.3        pillar_1.9.0      later_1.4.0       gtable_0.3.6      glue_1.8.0       
-#> [51] profvis_0.4.0     Rcpp_1.0.13-1     tidyselect_1.2.1  xfun_0.49         rstudioapi_0.17.1
+#> [51] profvis_0.4.0     Rcpp_1.0.13-1     tidyselect_1.2.1  xfun_0.50         rstudioapi_0.17.1
 #> [56] knitr_1.49        farver_2.1.2      ggbezier_0.1.0    xtable_1.8-4      htmltools_0.5.8.1
 #> [61] igraph_2.1.1      labeling_0.4.3    rmarkdown_2.29    compiler_4.4.1
 ```

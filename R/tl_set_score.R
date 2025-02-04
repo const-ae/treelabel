@@ -153,3 +153,24 @@ tl_as_numeric <- function(x){
   attributes(new_mat) <- attributes(mat)
   .treelabel_like(new_mat, x)
 }
+
+
+#' Modify tree of an existing treelabel
+#'
+#' @param x `treelabel` vector
+#' @param new_tree an igraph object that describes the new tree
+#' @param tree_root the name of the tree root. Defaults to the
+#'   to the name of the tree root of `x`.
+#' @param ... arguments passed to [`treelabel.matrix`]
+#'
+#' @returns a `treelabel` vector described by the new tree.
+#'
+#' @export
+tl_modify_tree <- function(x, new_tree, tree_root = tl_tree_root(x), ...){
+  dat <- tl_score_matrix(x)
+  vertices <- igraph::V(new_tree)$name
+  old_sel <- intersect(colnames(dat), vertices)
+  new_sel <- setdiff(vertices, colnames(dat))
+  new_mat <- cbind(dat[,old_sel,drop=FALSE], matrix(NA, nrow = nrow(dat), ncol = length(new_sel), dimnames = list(NULL, new_sel)))
+  treelabel(new_mat, tree = new_tree, tree_root = tree_root, ...)
+}
