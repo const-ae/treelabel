@@ -61,7 +61,7 @@ tl_modify <- function(x, ..., .propagate_NAs_down = TRUE){
              "beause the expression evaluated to a data.frame/matrix.")
       }
       if(! all(nn %in% vertex_names)){
-        wrong_name <- which(! nn %in% vertex_names)
+        wrong_name <- nn[which(! nn %in% vertex_names)]
         stop("Assigning to '", toString(wrong_name, width = 30), "' is not possible as they are not vertices.")
       }
       mat[,nn] <- res
