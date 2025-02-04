@@ -217,9 +217,9 @@ root.
 
 ``` r
 tl_tree(vec)
-#> IGRAPH dd8077c DN-- 8 7 -- 
+#> IGRAPH db7d9a4 DN-- 8 7 -- 
 #> + attr: name (v/c)
-#> + edges from dd8077c (vertex names):
+#> + edges from db7d9a4 (vertex names):
 #> [1] root      ->ImmuneCell      root      ->EndothelialCell root      ->EpithelialCell 
 #> [4] ImmuneCell->TCell           ImmuneCell->BCell           TCell     ->CD4_TCell      
 #> [7] TCell     ->CD8_TCell
@@ -494,6 +494,33 @@ dat |> filter(tl_if_all(where(is_treelabel), ImmuneCell > 0.7))
 #>   <chr>              <tl>        <tl>
 #> 1 cell_1      BCell(0.99) BCell(0.80)
 #> 2 cell_3  CD4_TCell(0.80) TCell(0.90)
+```
+
+In addition, we can also work on the whole matrix of values per tree
+label and combine them.
+
+``` r
+dat |>  mutate(consensus = tl_mean_across(c(vec,vec2)))
+#> # A tibble: 5 × 4
+#>   cell_id                   vec                 vec2             consensus
+#>   <chr>                    <tl>                 <tl>                  <tl>
+#> 1 cell_1            BCell(0.99)          BCell(0.80)           BCell(0.90)
+#> 2 cell_2  EndothelialCell(0.65) EpithelialCell(0.30) EndothelialCell(0.65)
+#> 3 cell_3        CD4_TCell(0.80)          TCell(0.90)       CD4_TCell(0.80)
+#> 4 cell_4                     NA      CD8_TCell(0.20)       CD8_TCell(0.20)
+#> 5 cell_5       ImmuneCell(0.40)          TCell(0.80)           TCell(0.80)
+
+dat |> 
+  mutate(across(c(vec, vec2), \(x) tl_modify(x, .scores > 0.5))) |>
+  mutate(consensus = tl_sum_across(c(vec,vec2)))
+#> # A tibble: 5 × 4
+#>   cell_id                   vec        vec2             consensus
+#>   <chr>                    <tl>        <tl>                  <tl>
+#> 1 cell_1            BCell(1.00) BCell(1.00)           BCell(2.00)
+#> 2 cell_2  EndothelialCell(1.00)          NA EndothelialCell(1.00)
+#> 3 cell_3        CD4_TCell(1.00) TCell(1.00)       CD4_TCell(1.00)
+#> 4 cell_4                     NA          NA                    NA
+#> 5 cell_5                     NA TCell(1.00)           TCell(1.00)
 ```
 
 ## Pretty plotting

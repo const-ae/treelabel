@@ -15,6 +15,13 @@ score is higher than a threshold}
 
 \item{...}{additional arguments passed on to \code{rlang::eval_tidy}
 
+The \code{expr} can refer to two additional values:
+\itemize{
+\item \code{.tl} a data pronoun that can be used to refer to nodes in the
+tree (e.g., \code{tl_eval(x, .tl$Bird)} instead of \code{tl_eval(x, Bird)})
+\item \code{.scores} a reference to the \code{tl_score_matrix}.
+}
+
 \strong{Note}: Do not perform any stateful calculation in \code{expr} as it
 is evaluated multiple times}
 }

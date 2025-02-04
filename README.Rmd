@@ -261,6 +261,17 @@ dat |> mutate(mean_immune_score = tl_mean_across(where(is_treelabel), ImmuneCell
 dat |> filter(tl_if_all(where(is_treelabel), ImmuneCell > 0.7))
 ```
 
+In addition, we can also work on the whole matrix of values per tree label and combine them.
+
+```{r, paged.print=FALSE}
+dat |>  mutate(consensus = tl_mean_across(c(vec,vec2)))
+
+dat |> 
+  mutate(across(c(vec, vec2), \(x) tl_modify(x, .scores > 0.5))) |>
+  mutate(consensus = tl_sum_across(c(vec,vec2)))
+```
+
+
 
 ## Pretty plotting
 

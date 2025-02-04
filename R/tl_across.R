@@ -12,10 +12,14 @@
 #' @export
 tl_across <- function(.cols, expr, ...){
   if(! requireNamespace("dplyr")) stop("This function depends on 'dplyr' package. Please install it.")
-  dplyr::across({{.cols}}, \(x){
-    stopifnot(is_treelabel(x))
-    tl_eval(x, {{expr}})
-  }, ...)
+  if(rlang::quo_is_missing(rlang::enquo(expr))){
+    dplyr::across({{.cols}}, ...)
+  }else{
+    dplyr::across({{.cols}}, \(x){
+      stopifnot(is_treelabel(x))
+      tl_eval(x, {{expr}})
+    }, ...)
+  }
 }
 
 #' @export
@@ -38,23 +42,49 @@ tl_if_all <- function(.cols, expr, ...){
   }, ...)
 }
 
+
+.prepare_across_fun <- function(.cols, expr, ...){
+  df <- tl_across(.cols = {{.cols}}, {{expr}}, ...)
+  type <- vctrs::vec_ptype_common(!!! df)
+  if(is_treelabel(type)){
+    names <- colnames(tl_score_matrix(type))
+    mat <- do.call(cbind, lapply(df, \(x) as.vector(tl_score_matrix(x))))
+    reconstr_fnc <- \(res){
+      .treelabel_like(matrix(res, ncol = length(names), dimnames = list(NULL, names)), type)
+    }
+  }else if(is.matrix(type)){
+    names <- lapply(df, colnames)
+    for(idx in seq_along(names)){
+      all.equal(names[[idx]], names[[1]])
+    }
+    mat <- do.call(cbind, lapply(df, \(x) as.vector(x)))
+    reconstr_fnc <- \(res){
+      matrix(res, ncol = ncol(type), dimnames = list(NULL, names[[1]]))
+    }
+  }else{
+    mat <- as.matrix(df)
+    reconstr_fnc <- identity
+  }
+  list(matrix = mat, reconstr_fnc = reconstr_fnc)
+}
+
 #' @export
 #' @rdname tl_across
 tl_sum_across <- function(.cols, expr, ..., na.rm = TRUE){
-  mat <- as.matrix(tl_across(.cols = {{.cols}}, {{expr}}, ...))
-  rowSums(mat, na.rm = na.rm)
+  tmp <- .prepare_across_fun({{.cols}}, {{expr}}, ...)
+  tmp$reconstr_fnc(rowSums(tmp$matrix, na.rm = na.rm))
 }
 
 #' @export
 #' @rdname tl_across
 tl_mean_across <- function(.cols, expr, ..., na.rm = TRUE){
-  mat <- as.matrix(tl_across({{.cols}}, {{expr}}, ...))
-  rowMeans(mat, na.rm = na.rm)
+  tmp <- .prepare_across_fun({{.cols}}, {{expr}}, ...)
+  tmp$reconstr_fnc(rowMeans(tmp$matrix, na.rm = na.rm))
 }
 
 #' @export
 #' @rdname tl_across
 tl_countNAs_across <- function(.cols, expr, ..., na.rm = TRUE){
-  mat <- as.matrix(tl_across({{.cols}}, {{expr}}, ...))
-  matrixStats::rowCounts(mat, value = NA)
+  tmp <- .prepare_across_fun({{.cols}}, {{expr}}, ...)
+  tmp$reconstr_fnc(matrixStats::rowCounts(tmp$matrix, value = NA))
 }

@@ -7,6 +7,12 @@
 #'   score is higher than a threshold
 #' @param ... additional arguments passed on to `rlang::eval_tidy`
 #'
+#' The `expr` can refer to two additional values:
+#'
+#'  * `.tl` a data pronoun that can be used to refer to nodes in the
+#'    tree (e.g., `tl_eval(x, .tl$Bird)` instead of `tl_eval(x, Bird)`)
+#'  * `.scores` a reference to the `tl_score_matrix`.
+#'
 #' **Note**: Do not perform any stateful calculation in `expr` as it
 #'   is evaluated multiple times
 #'
@@ -25,6 +31,7 @@ tl_eval <- function(x, expr, ...){
   data_tib <- tibble::as_tibble(data)
   mask <- rlang::as_data_mask(data_tib)
   mask$.tl <- rlang::as_data_pronoun(data_tib)
+  mask$.scores <- data
   rlang::eval_tidy(expr, data = mask, ...)
 }
 
