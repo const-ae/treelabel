@@ -12,7 +12,13 @@ vec_ptype2.treelabel.treelabel <- function(x, y, ..., x_arg = "", y_arg = ""){
   if(.get_tree_root(x) != .get_tree_root(y)){
     vctrs::stop_incompatible_type(x, y, x_arg = x_arg, y_arg = y_arg, details = "tree_root of 'x' and 'y' is not identical")
   }
-  x
+  if(is.logical(tl_score_matrix(x)) && ! is.logical(tl_score_matrix(y))){
+    y
+  }else{
+    # Either both are numeric or both are logical or x is numeric and y is logical.
+    # Anyways, the output should be a treelabel with a numeric score matrix
+    x
+  }
 }
 
 #' @export
@@ -35,6 +41,9 @@ vec_cast.treelabel.treelabel <- function(x, to, ..., x_arg = "", to_arg = ""){
   if(.get_tree_root(x) != .get_tree_root(to)){
     vctrs::stop_incompatible_cast(x, to, x_arg = x_arg, y_arg = to_arg, details = "tree_root of 'x' and 'to' is not identical")
   }
+  if(is.logical(tl_score_matrix(x)) && ! is.logical(tl_score_matrix(to))){
+    x <- tl_as_numeric(x)
+  }
   x
 }
 
@@ -44,7 +53,12 @@ vec_cast.treelabel.treelabel <- function(x, to, ..., x_arg = "", to_arg = ""){
 
 #' @export
 vec_cast.treelabel.character <- function(x, to, ...){
-  treelabel(x, tree = .get_tree(to), tree_root = .get_tree_root(to), distances = .get_distances(to))
+  x <- treelabel(x, tree = .get_tree(to), tree_root = .get_tree_root(to), distances = .get_distances(to))
+  if(is.numeric(tl_score_matrix(to))){
+    tl_as_numeric(x)
+  }else{
+    x
+  }
 }
 
 
