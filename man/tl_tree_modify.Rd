@@ -2,19 +2,26 @@
 % Please edit documentation in R/tl_set_score.R
 \name{tl_tree_modify}
 \alias{tl_tree_modify}
+\alias{tl_tree_keep}
 \title{Modify tree of an existing treelabel}
 \usage{
 tl_tree_modify(x, new_tree, tree_root = tl_tree_root(x), ...)
+
+tl_tree_keep(x, .p, ...)
 }
 \arguments{
 \item{x}{\code{treelabel} vector}
 
-\item{new_tree}{an igraph object that describes the new tree}
+\item{new_tree}{an igraph object that describes the new tree or
+a function that creates a tree from the old tree.}
 
 \item{tree_root}{the name of the tree root. Defaults to the
 to the name of the tree root of \code{x}.}
 
-\item{...}{arguments passed to \code{\link{treelabel.matrix}}}
+\item{...}{arguments passed to \code{\link{treelabel}}}
+
+\item{.p}{predicate that is used to filter the vertices of the tree. A function that receives the
+names of the vertices and returns a selection which ones to keep.}
 }
 \value{
 a \code{treelabel} vector described by the new tree.
