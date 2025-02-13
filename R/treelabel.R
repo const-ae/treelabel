@@ -29,7 +29,11 @@ treelabel <- function(x, tree,  tree_root = "root", propagate_up = c("sum", "cum
 #' @rdname treelabel
 treelabel.matrix <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
   res <- new_treelabel(x, tree, tree_root = tree_root, ...)
-  .propagate_score_up(res, mode = propagate_up, overwrite = FALSE)
+  res <- .propagate_score_up(res, mode = propagate_up, overwrite = FALSE)
+  if(is.logical(x)){
+    res <- tl_as_logical(res)
+  }
+  res
 }
 
 #' @importFrom rlang `%||%`
