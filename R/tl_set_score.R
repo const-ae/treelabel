@@ -181,3 +181,32 @@ tl_tree_modify <- function(x, new_tree, tree_root = tl_tree_root(x), ...){
   new_mat <- cbind(dat[,old_sel,drop=FALSE], matrix(NA, nrow = nrow(dat), ncol = length(new_sel), dimnames = list(NULL, new_sel)))
   treelabel(new_mat, tree = new_tree, tree_root = tree_root, ...)
 }
+
+#' @param .p predicate that is used to filter the vertices of the tree. A function that receives the
+#'   names of the vertices and returns a selection which ones to keep.
+#'
+#' @rdname tl_tree_modify
+#' @export
+tl_tree_keep <- function(x, .p, ...){
+  root <- tl_tree_root(x)
+  vertices <- setdiff(colnames(tl_score_matrix(x)), root)
+  .fn <- rlang::as_function(.p)
+  res <- .fn(vertices, ...)
+  indices <- vctrs::vec_as_location(res, n = length(vertices), names = vertices)
+  names_to_keep <- c(root, vertices[indices])
+
+  tree <- tl_tree(x)
+  leavenodes <- sapply(igraph::V(tree), \(x) length(igraph::neighbors(tree, x, mode = "out")) == 0)
+  paths <- igraph::all_shortest_paths(tree, from = root, to = leavenodes, mode = "out")
+  connection_matrix <- unique(do.call(rbind, lapply(paths$vpaths, \(path){
+    mod_path <- intersect(path$name, names_to_keep)
+    if(length(mod_path) == 0){
+      matrix(NA_character_, nrow = 0, ncol = 2)
+    }else if(length(mod_path) == 1){
+      matrix(mod_path, nrow = 0, ncol = 2)
+    }else{
+      cbind(mod_path[-length(mod_path)], mod_path[-1])
+    }
+  })))
+  tl_tree_modify(x, igraph::graph_from_edgelist(connection_matrix), ...)
+}

@@ -211,5 +211,30 @@ test_that("tl_tree_modify works", {
   vec_mod <- tl_tree_modify(vec, \(x) igraph::delete_vertices(x, c("Parrot", "Eagle")))
   expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,-c(4,5)])
 })
+
+
+test_that("tl_tree_filter works", {
+  tree <- igraph::graph_from_literal(
+    Animal - Bird : Mammal,
+    Bird - Parrot : Eagle,
+    Mammal - Dog : Cat
+  )
+  vec <- treelabel(c("Bird", "Mammal", "Parrot", "Dog"), tree = tree, tree_root = "Animal")
+
+  vec_mod <- tl_tree_keep(vec, \(x){
+    c("Bird", "Dog", "Cat")
+  })
+  expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,c(1,2,6,7)])
+
+  vec_mod <- tl_tree_keep(vec, \(x){
+    which(substr(x, 1, 1) == "B")
+  })
+  expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,c(1,2)])
+
+  vec_mod <- tl_tree_keep(vec, \(x){
+    substr(x, 1, 1) == "B"
+  })
+  expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,c(1,2)])
 })
+
 
