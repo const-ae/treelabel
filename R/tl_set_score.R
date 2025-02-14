@@ -187,7 +187,7 @@ tl_tree_modify <- function(x, new_tree, tree_root = tl_tree_root(x), ...){
 #'
 #' @rdname tl_tree_modify
 #' @export
-tl_tree_keep <- function(x, .p, ...){
+tl_tree_filter <- function(x, .p, ...){
   root <- tl_tree_root(x)
   vertices <- setdiff(colnames(tl_score_matrix(x)), root)
   .fn <- rlang::as_function(.p)

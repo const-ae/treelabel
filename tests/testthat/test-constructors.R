@@ -221,17 +221,17 @@ test_that("tl_tree_filter works", {
   )
   vec <- treelabel(c("Bird", "Mammal", "Parrot", "Dog"), tree = tree, tree_root = "Animal")
 
-  vec_mod <- tl_tree_keep(vec, \(x){
+  vec_mod <- tl_tree_filter(vec, \(x){
     c("Bird", "Dog", "Cat")
   })
   expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,c(1,2,6,7)])
 
-  vec_mod <- tl_tree_keep(vec, \(x){
+  vec_mod <- tl_tree_filter(vec, \(x){
     which(substr(x, 1, 1) == "B")
   })
   expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,c(1,2)])
 
-  vec_mod <- tl_tree_keep(vec, \(x){
+  vec_mod <- tl_tree_filter(vec, \(x){
     substr(x, 1, 1) == "B"
   })
   expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,c(1,2)])

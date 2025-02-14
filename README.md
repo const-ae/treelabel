@@ -217,9 +217,9 @@ root.
 
 ``` r
 tl_tree(vec)
-#> IGRAPH 8182496 DN-- 8 7 -- 
+#> IGRAPH 79168f3 DN-- 8 7 -- 
 #> + attr: name (v/c)
-#> + edges from 8182496 (vertex names):
+#> + edges from 79168f3 (vertex names):
 #> [1] root      ->ImmuneCell      root      ->EndothelialCell root      ->EpithelialCell 
 #> [4] ImmuneCell->TCell           ImmuneCell->BCell           TCell     ->CD4_TCell      
 #> [7] TCell     ->CD8_TCell
@@ -449,11 +449,12 @@ tl_tree_modify(vec, subtree) |> tl_score_matrix()
 #> [5,] 0.40        NA        NA              NA             NA
 ```
 
-Alternatively, we can use the `tl_tree_keep` function, which modifies
-the set of vertices.
+Alternatively, we can use the `tl_tree_filter` function to reduce the
+vertices to a suitable set.
 
 ``` r
-tl_tree_keep(vec, \(names) grepl("TCell", names))
+# Select all T cells
+tl_tree_filter(vec, \(names) grepl("TCell", names))
 #> <treelabel[5]>
 #> [1] root(1.00)      root(1.00)      CD4_TCell(0.80) <NA>            root(0.40)     
 #> # Tree: root, TCell, CD4_TCell, CD8_TCell

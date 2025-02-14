@@ -247,10 +247,11 @@ tl_score_matrix(vec)
 tl_tree_modify(vec, subtree) |> tl_score_matrix()
 ```
 
-Alternatively, we can use the `tl_tree_keep` function, which modifies the set of vertices.
+Alternatively, we can use the `tl_tree_filter` function to reduce the vertices to a suitable set.
 
 ```{r}
-tl_tree_keep(vec, \(names) grepl("TCell", names))
+# Select all T cells
+tl_tree_filter(vec, \(names) grepl("TCell", names))
 ```
 
 

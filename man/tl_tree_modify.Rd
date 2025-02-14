@@ -2,12 +2,12 @@
 % Please edit documentation in R/tl_set_score.R
 \name{tl_tree_modify}
 \alias{tl_tree_modify}
-\alias{tl_tree_keep}
+\alias{tl_tree_filter}
 \title{Modify tree of an existing treelabel}
 \usage{
 tl_tree_modify(x, new_tree, tree_root = tl_tree_root(x), ...)
 
-tl_tree_keep(x, .p, ...)
+tl_tree_filter(x, .p, ...)
 }
 \arguments{
 \item{x}{\code{treelabel} vector}
