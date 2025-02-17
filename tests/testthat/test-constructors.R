@@ -237,4 +237,20 @@ test_that("tl_tree_filter works", {
   expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,c(1,2)])
 })
 
+test_that("tl_tree_cut works", {
+  tree <- igraph::graph_from_literal(
+    Animal - Bird : Mammal,
+    Bird - Parrot : Eagle,
+    Mammal - Dog : Cat
+  )
+  vec <- treelabel(c("Bird", "Mammal", "Parrot", "Dog"), tree = tree, tree_root = "Animal")
+
+  vec_mod <- tl_tree_cut(vec, "Bird")
+  expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,c(2,4,5)])
+
+
+  vec_mod <- tl_tree_cut(vec, "Animal")
+  expect_equal(vec_mod, vec, ignore_attr = "tree")
+})
+
 

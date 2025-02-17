@@ -217,9 +217,9 @@ root.
 
 ``` r
 tl_tree(vec)
-#> IGRAPH 79168f3 DN-- 8 7 -- 
+#> IGRAPH 3687f78 DN-- 8 7 -- 
 #> + attr: name (v/c)
-#> + edges from 79168f3 (vertex names):
+#> + edges from 3687f78 (vertex names):
 #> [1] root      ->ImmuneCell      root      ->EndothelialCell root      ->EpithelialCell 
 #> [4] ImmuneCell->TCell           ImmuneCell->BCell           TCell     ->CD4_TCell      
 #> [7] TCell     ->CD8_TCell
@@ -449,11 +449,17 @@ tl_tree_modify(vec, subtree) |> tl_score_matrix()
 #> [5,] 0.40        NA        NA              NA             NA
 ```
 
-Alternatively, we can use the `tl_tree_filter` function to reduce the
-vertices to a suitable set.
+Alternatively, we can use the `tl_tree_filter` and `tl_tree_cut`
+functions to reduce the vertices to a suitable set.
 
 ``` r
 # Select all T cells
+tl_tree_cut(vec, new_root = "TCell")
+#> <treelabel[5]>
+#> [1] <NA>            <NA>            CD4_TCell(0.80) <NA>            <NA>           
+#> # Tree: TCell, CD4_TCell, CD8_TCell
+
+# This does the same, but leaves the old root
 tl_tree_filter(vec, \(names) grepl("TCell", names))
 #> <treelabel[5]>
 #> [1] root(1.00)      root(1.00)      CD4_TCell(0.80) <NA>            root(0.40)     
@@ -612,7 +618,7 @@ sessionInfo()
 #> other attached packages:
 #>  [1] lubridate_1.9.3  forcats_1.0.0    stringr_1.5.1    dplyr_1.1.4      purrr_1.0.2     
 #>  [6] readr_2.1.5      tidyr_1.3.1      tibble_3.2.1     ggplot2_3.5.1    tidyverse_2.0.0 
-#> [11] treelabel_0.0.5  testthat_3.2.1.1
+#> [11] treelabel_0.0.6  testthat_3.2.1.1
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] generics_0.1.3    utf8_1.2.4        stringi_1.8.4     shadowtext_0.1.4  hms_1.1.3        

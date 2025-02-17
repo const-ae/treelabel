@@ -210,3 +210,14 @@ tl_tree_filter <- function(x, .p, ...){
   })))
   tl_tree_modify(x, igraph::graph_from_edgelist(connection_matrix), ...)
 }
+
+#' @param new_root the name of a vertex in the tree that will be
+#'   used as the root of the cut tree.
+#' @rdname tl_tree_modify
+#' @export
+tl_tree_cut <- function(x, new_root){
+  stopifnot(is_treelabel(x))
+  tree <- tl_tree(x)
+  new_tree <- igraph::subgraph(tree, igraph::subcomponent(tree, new_root, "out"))
+  tl_tree_modify(x, new_tree = new_tree, tree_root = new_root)
+}
