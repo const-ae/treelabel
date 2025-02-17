@@ -5,7 +5,6 @@
 \title{Evaluate an expression in the tree label environment}
 \usage{
 tl_eval(x, expr, check_bounds = TRUE)
-
 }
 \arguments{
 \item{x}{\code{treelabel} vector}
@@ -16,6 +15,8 @@ score is higher than a threshold}
 
 \item{check_bounds}{flag that indicates if}
 
+\item{...}{multiple \code{expr}.
+
 The \code{expr} can refer to two additional values:
 \itemize{
 \item \code{.tl} a data pronoun that can be used to refer to nodes in the
@@ -24,7 +25,12 @@ tree (e.g., \code{tl_eval(x, .tl$Bird)} instead of \code{tl_eval(x, Bird)})
 }
 
 \strong{Note}: Do not perform any stateful calculation in \code{expr} as it
-is evaluated multiple times}
+is evaluated multiple times if \code{check_bounds == TRUE}.}
+}
+\value{
+\code{tl_eval} returns the result of evaluating \code{expr}.
+\code{tl_eval_multi} returns a  \code{tibble} where each
+\code{expr} is one column.
 }
 \description{
 Evaluate an expression in the tree label environment

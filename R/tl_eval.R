@@ -33,23 +33,15 @@ tl_eval <- function(x, expr, check_bounds = TRUE){
     .eval_impl(x, {{expr}})
   }
 }
-#' @export
-tl_eval <- function(x, expr, ...){
-  stopifnot(is_treelabel(x))
-  # A <- .eval_impl(x, {{expr}}, ...)
-  B <- .eval_impl(tl_atmost(x), {{expr}}, ...)
-  C <- .eval_impl(tl_atleast(x), {{expr}}, ...)
-  ifelse(B == C, B, NA)
-}
 
-.eval_impl <- function(x, expr, ...){
+.eval_impl <- function(x, expr){
   expr <- rlang::enquo(expr)
   data <- tl_score_matrix(x)
   data_tib <- tibble::as_tibble(data)
   mask <- rlang::as_data_mask(data_tib)
   mask$.tl <- rlang::as_data_pronoun(data_tib)
   mask$.scores <- data
-  rlang::eval_tidy(expr, data = mask, ...)
+  rlang::eval_tidy(expr, data = mask)
 }
 
 #' Get the score for a name of a tree node

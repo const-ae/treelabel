@@ -37,6 +37,7 @@ test_that("tl_eval can handle references to the score matrix", {
   expect_equal(tl_eval(vec, .scores), tl_score_matrix(vec))
 })
 
+
 test_that("tl_eval can handle complex result values", {
   tree <- igraph::graph_from_literal(
     Animal - Bird : Mammal,
@@ -63,3 +64,5 @@ test_that("tl_eval can handle complex result values", {
   gr_return <- tl_eval(vec, igraph::graph_from_edgelist(cbind("H", letters)), check_bounds = FALSE)
   expect_s3_class(gr_return, "igraph")
 })
+
+
