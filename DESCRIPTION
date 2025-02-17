@@ -1,7 +1,7 @@
 Package: treelabel
 Type: Package
 Title: Store labels in a tree hierarchy
-Version: 0.0.5
+Version: 0.0.6
 Authors@R: person("Constantin", "Ahlmann-Eltze", email = "artjom31415@googlemail.com", 
                     role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3762-068X"))
 Description: The labels for many objects exist in hierarchical relationships. This
