@@ -4,7 +4,8 @@
 \alias{tl_eval}
 \title{Evaluate an expression in the tree label environment}
 \usage{
-tl_eval(x, expr, ...)
+tl_eval(x, expr, check_bounds = TRUE)
+
 }
 \arguments{
 \item{x}{\code{treelabel} vector}
@@ -13,7 +14,7 @@ tl_eval(x, expr, ...)
 environment. Can, for example, be used to check if a particular
 score is higher than a threshold}
 
-\item{...}{additional arguments passed on to \code{rlang::eval_tidy}
+\item{check_bounds}{flag that indicates if}
 
 The \code{expr} can refer to two additional values:
 \itemize{

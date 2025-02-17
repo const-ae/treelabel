@@ -5,7 +5,8 @@
 #' @param expr an unquoted expression that is evaluated in the treelabel
 #'   environment. Can, for example, be used to check if a particular
 #'   score is higher than a threshold
-#' @param ... additional arguments passed on to `rlang::eval_tidy`
+#' @param check_bounds flag that indicates if
+#' @param ... multiple `expr`.
 #'
 #' The `expr` can refer to two additional values:
 #'
@@ -14,8 +15,24 @@
 #'  * `.scores` a reference to the `tl_score_matrix`.
 #'
 #' **Note**: Do not perform any stateful calculation in `expr` as it
-#'   is evaluated multiple times
+#'   is evaluated multiple times if `check_bounds == TRUE`.
 #'
+#' @return `tl_eval` returns the result of evaluating `expr`.
+#'   `tl_eval_multi` returns a  `tibble` where each
+#'   `expr` is one column.
+#'
+#' @export
+tl_eval <- function(x, expr, check_bounds = TRUE){
+  stopifnot(is_treelabel(x))
+  if(check_bounds){
+    B <- .eval_impl(tl_atmost(x), {{expr}})
+    C <- .eval_impl(tl_atleast(x), {{expr}})
+    B[B != C] <- NA
+    B
+  }else{
+    .eval_impl(x, {{expr}})
+  }
+}
 #' @export
 tl_eval <- function(x, expr, ...){
   stopifnot(is_treelabel(x))
