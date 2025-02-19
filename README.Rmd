@@ -54,7 +54,7 @@ You can install the development version of `treelabel` like this:
 devtools::install_github("const-ae/treelabel")
 ```
 
-## Example
+# Documentation
 
 We define our label hierarchy using [`igraph`](https://r.igraph.org/articles/igraph.html).
 
@@ -76,8 +76,120 @@ library(tidyverse)
 ```{r, include=FALSE}
 devtools::load_all(".")
 library(tidyverse)
+options(
+  pillar.print_max = 5,
+  pillar.print_min = 5
+)
 ```
 
+## Motivating example
+
+I will demonstrate a typical single cell analysis workflow that takes a hierarchical set of labels, stores them in a `treelabel` vector, and analyzes the abundance changes of cell types.
+
+I will illustrate the process using the "pbmcsca" dataset from Seurat and score each cell using Azimuth. Note that `treelabel` is compatible with any data storage format (e.g., `SingleCellExperiment` or `Seurat`) and can handle both manual cell type labels based on clustering or automated cell scores produced by, for example, Azimuth or Celltypist.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE, results='hide'}
+# This can take a minute to run through
+library(Seurat)
+SeuratData::InstallData("pbmcsca")
+pbmcsca <- SeuratData::LoadData("pbmcsca")
+azimuth_res <- Azimuth::RunAzimuth(pbmcsca, reference = "pbmcref")
+# Select most important columns to make the output easier to read.
+azimuth_res@meta.data <- select(azimuth_res@meta.data, c("orig.ident", "Experiment", "Method", starts_with("predicted.celltype.")))
+```
+
+Take a look at the Azimuth output. It contains six new columns that all start with "predicted.celltype". These columns contain the labels and confidence scores from the automated mapping. These will serve as the input to `treelabel` which turns the six columns into one!
+
+```{r, paged.print=FALSE}
+azimuth_res@meta.data |>
+  as_tibble(rownames = "cell_id") 
+```
+
+To create the `treelabel` vector, we need to define our cell type hierarchy. We use the `igraph` packages for this.
+
+```{r, paged.print=FALSE}
+# Define the cell type label hierarchy
+pbmcsca_tree <- igraph::graph_from_literal(
+  root - NK : `T cell` : Mono : DC : B,
+  `T cell` - `CD8 T` : `CD4 T`,
+  `CD4 T` - CTL : `CD4 Naive` : `CD4 TCM` : `CD4 TEM` : Treg,
+  `CD8 T` - `CD8 Naive` : `CD8 TCM` : `CD8 TEM`,
+  DC - cDC1 : cDC2 : pDC,
+  Mono - `CD14 Mono` : `CD16 Mono`
+)
+
+# Convert the Azimuth result into a treelabel vector: 
+# * We first append '.label' to the Azimuth column to make the `pivot_longer` simpler.
+# * We then filter the cell types to the ones we list in the `pbmcsca_tree`.
+# * Lastly, we convert the label and score column into a treelabel vector.
+celltype_annotations <- azimuth_res@meta.data |>
+  as_tibble(rownames = "cell_id") |>
+  dplyr::rename_with(.cols = matches("^predicted.celltype.l\\d$"), \(x) paste0(x, ".label")) |>
+  pivot_longer(starts_with("predicted.celltype"), names_prefix = "predicted\\.celltype\\.", names_sep = "\\." ,names_to = c("level", ".value")) |>
+  filter(label %in% igraph::V(pbmcsca_tree)$name) |>
+  treelabel_from_dataframe(pbmcsca_tree, id = "cell_id", label = "label", score = "score", name = "azimuth_celltypes")
+```
+
+The `azimuth_celltypes` column is an S3 vector (build ontop of the `vctrs` package) which works a bit like a `factor`. Each entry contains the full information about the hierarchical cell type labels. By default, `treelabel` prints the most precise cell type label that is available, but the information about the other levels is still accessible
+
+```{r, paged.print=FALSE}
+vec <- head(celltype_annotations$azimuth_celltypes, n = 8)
+vec
+
+# The fourth element is a T cell, a CD8 T, and a CD8 TEM!
+vec[4]
+tl_eval(vec[4], `T cell`)
+tl_eval(vec[4], `CD8 T`)
+tl_eval(vec[4], `CD8 TEM`)
+```
+
+We can join the `celltype_annotations` with the full meta data to replace the old `predicted.celltype` column with our new `treelabel`.
+
+```{r, paged.print=FALSE}
+meta_data <- azimuth_res@meta.data |>
+  as_tibble(rownames = "cell_id") |>
+  dplyr::select(- starts_with("predicted.celltype")) |>
+  left_join(celltype_annotations, by = "cell_id")
+
+meta_data
+```
+
+The `pbmcsca` contains results from ten different sequencing experiments. We can for example count how often each cell type was seen per method
+
+```{r, paged.print=FALSE}
+# Summing the confidence scores does not exactly give you the counts
+meta_data |>
+  summarize(as_tibble(tl_score_matrix(sum(azimuth_celltypes, na.rm=TRUE))), .by = c(Method)) 
+
+# Instead, you can say that only labels where the score exceeds a thresholds count.
+meta_data |>
+  mutate(azimuth_celltypes = tl_modify(azimuth_celltypes, .scores > 0.8)) |>
+  summarize(as_tibble(tl_score_matrix(sum(azimuth_celltypes, na.rm=TRUE))), .by = c(Method))
+```
+
+The `test_abundance_changes` function makes it easy to test if the number of cells of a cell type changes between conditions. Importantly, you need to have multiple independent replicates. The `pbmcsca` unfortunately does not have that, so I will just simulate random patient IDs to demonstrate how the function works.
+
+```{r, paged.print=FALSE}
+# Apply threshold and make Experiment a factor
+input_dat <- meta_data |>
+  mutate(Experiment = as.factor(Experiment)) |>
+  mutate(patient_id = sample(paste0("sample_", 1:5), size = n(), replace = TRUE)) |>
+  mutate(azimuth_celltypes = tl_modify(azimuth_celltypes, .scores > 0.8)) 
+
+# The function takes many arguments. See `?test_abundance_changes` for all details
+test_abundance_changes(input_dat, design = ~ Experiment, aggregate_by = patient_id) 
+
+# We can also run `test_abundance_changes` inside dplyr::reframe (an alternative to `summarize)
+# and calculate the abundance changes for each Method separately.
+input_dat |>
+  reframe(test_abundance_changes(data = across(everything()), design = ~ Experiment, aggregate_by = patient_id, 
+                                 reference = `T cell`, contrast = cond(Experiment = 'pbmc2') - cond(Experiment = 'pbmc1')),
+          .by = Method) 
+```
+
+
+
+## Technical documentation
 
 ### Constructors
 
@@ -99,7 +211,7 @@ vec
 ```
 
 
-Some tools provide the confidence scores for tree vertex. In this case, you can provide the annotations as a `list ` or a `data.frame`
+Some tools provide the confidence scores for each vertex in the tree. In this case, you can provide the annotations as a `list ` or a `data.frame`
 
 ```{r}
 lst <- list(
@@ -201,7 +313,7 @@ tl_eval(t1, CD4_TCell < CD8_TCell)
 ```
 
 
-## Arithmetic
+### Arithmetic
 
 You can combine two vectors or summarize across elements. You can do whatever calculations you want, and `treelabel` will try to make the right thing happen. You can also do problematic things like produce negative values. `treelabel` currently does not stop you, but this breaks one of the assumptions of `treelabel`.
 
@@ -213,7 +325,7 @@ tibble(vec, vec2) |>
          rounding = round(vec))
 ```
 
-## Modification
+### Modification
 
 You can modify the elements of a `treelabel` vector. The easiest is way is to use `if_else` (note `ifelse` does not work!!) and mix the content of two vectors. Alternatively, you can set elements to `NA`.
 
@@ -236,7 +348,9 @@ tl_score_matrix(tl_modify(vec, ImmuneCell = NA, .propagate_NAs_down = TRUE))
 tl_score_matrix(tl_modify(vec, ImmuneCell = NA, .propagate_NAs_down = FALSE))
 ```
 
-If we want to subset the values to a subset of the nodes, you can use the `tl_tree_modify` function.
+#### Tree modifications
+
+Sometimes you don't want to change the values within the tree, but change the tree structure or only work on a selected branch. The `tl_tree_modify` allows you to set a completely new tree structure and only retain values for vertices that occurr in both the new and old tree.
 
 ```{r}
 subtree <- igraph::graph_from_literal(
@@ -247,7 +361,7 @@ tl_score_matrix(vec)
 tl_tree_modify(vec, subtree) |> tl_score_matrix()
 ```
 
-Alternatively, we can use the `tl_tree_filter` and `tl_tree_cut` functions to reduce the vertices to a suitable set.
+Sometimes, you only want to work on a single branch of the tree. You can do this using the `tl_tree_filter` and `tl_tree_cut` functions.
 
 ```{r}
 # Select all T cells
@@ -259,9 +373,9 @@ tl_tree_filter(vec, \(names) grepl("TCell", names))
 
 
 
-## Consensus construction
+### Consensus construction
 
-`treelabel` provides functions to make it easy to apply expression across `treelabel` columns. These functions are built on top of [`tidyr::across`](https://dplyr.tidyverse.org/reference/across.html) function. They take as the first argument a specification of columns (e.g., `where(is_treelabel)` or `starts_with("label_")`). The second argument is evaluated internally with `tl_eval`.
+`treelabel` provides functions to make it easy to apply expression across `treelabel` columns. These functions are built on top of [`dplyr::across`](https://dplyr.tidyverse.org/reference/across.html). They take as the first argument a specification of columns (e.g., `where(is_treelabel)` or `starts_with("label_")`). The second argument is evaluated internally with `tl_eval`.
 
 ```{r, paged.print=FALSE}
 dat <- tibble(cell_id = paste0("cell_", 1:5), vec, vec2)
@@ -284,7 +398,7 @@ dat |>
 
 
 
-## Pretty plotting
+### Pretty plotting
 
 The following visualization is inspired by the default tree visualization in D3.
 
@@ -334,7 +448,7 @@ ggplot(data = pl_tree$nodes, aes(x = distance_to_root, y = position)) +
 
 
 
-# Session Info
+## Session Info
 
 ```{r}
 sessionInfo()

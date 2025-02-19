@@ -1,3 +1,8 @@
+# treelabel 0.0.7
+
+* Add new function `test_abundance_changes`.
+
+
 # treelabel 0.0.5
 
 * Enable combining treelabel vectors where one is build around a numeric score matrix and the other
