@@ -6,7 +6,6 @@
 #'   environment. Can, for example, be used to check if a particular
 #'   score is higher than a threshold
 #' @param check_bounds flag that indicates if
-#' @param ... multiple `expr`.
 #'
 #' The `expr` can refer to two additional values:
 #'

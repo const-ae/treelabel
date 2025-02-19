@@ -13,9 +13,7 @@ tl_eval(x, expr, check_bounds = TRUE)
 environment. Can, for example, be used to check if a particular
 score is higher than a threshold}
 
-\item{check_bounds}{flag that indicates if}
-
-\item{...}{multiple \code{expr}.
+\item{check_bounds}{flag that indicates if
 
 The \code{expr} can refer to two additional values:
 \itemize{
