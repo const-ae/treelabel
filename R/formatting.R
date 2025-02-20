@@ -38,3 +38,16 @@ vec_ptype_abbr.treelabel <- function(x, ...) {
 .label_names <- function(x){
   colnames(tl_score_matrix(x))
 }
+
+#### This is necessary for pretty printing the
+#### treelabel in S4Vectors::DataFrame's
+
+setOldClass("treelabel")
+
+#' @importFrom S4Vectors showAsCell
+NULL
+#' @export
+methods::setMethod("showAsCell", "treelabel",
+                   function(object){
+                     format.treelabel(object)
+                   })
