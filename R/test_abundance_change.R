@@ -182,7 +182,7 @@ test_abundance_changes <- function(data, design, aggregate_by, contrast = NULL,
       failed <- FALSE
       tryCatch({
         fit <- modern_glm(y, design = design, offset = offset, family = model,
-                          col_data = aggr_dat, ridge_penalty = ridge_penalty)
+                          col_data = working_dat, ridge_penalty = ridge_penalty)
       }, error = function(err){
         failed_labs <<- c(failed_labs, labs)
         failed <<- TRUE
