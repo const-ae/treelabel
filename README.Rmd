@@ -27,7 +27,7 @@ This is an alpha software release: feel free to play around with the code, and p
 
 ![](man/figures/celltype_tree.png)
 
-I work on single-cell RNA-seq data with gene expression profiles for thousands of cells. A common first step is to annotate each cell's *cell type*. The granularity of these cell type annotations can vary; one can classify cells broadly into *immune cells* or *epithelial cells* or one can be very detailed and distinguish within the immune cells *CD4 positive T regulatory cells* from *CD4 positive T follicular helper cells*. Choosing the best annotation level can be difficult because one analysis may need broad cell types, whereas others require the highest possible resolution. The `treelabel` package provides an intuitive interface to store and work with these hierarchically related labels. 
+I work on single-cell RNA-seq data with gene expression profiles for thousands of cells. A common first step is to annotate each cell's *cell type*. The granularity of these cell type annotations can vary; one can classify cells broadly into *immune cells* or *epithelial cells* or one can be very detailed and distinguish within the immune cells *CD4 positive T regulatory cells* from *CD4 positive T follicular helper cells*. Choosing the best annotation level is difficult because one analysis may need broad cell types, whereas others require the highest possible resolution. The `treelabel` package provides an intuitive interface to store and work with these hierarchically related labels. 
 
 Depending on the reference data and annotation method used for the cell typing, you often have multiple (partially) conflicting annotations. `treelabel` provides functions to build a consensus across different annotations and can integrate annotations at different resolutions. Furthermore, `treelabel` supports uncertainty scores associated with a label. For example, most automatic cell type scoring tools (like [Azimuth](https://azimuth.hubmapconsortium.org/) or [celltypist](https://www.celltypist.org/)), return a confidence score in addition to the cell type label. These scores enable a more precise selection of cells where you have sufficient confidence in the cell type label.
 
@@ -41,8 +41,8 @@ This package is purposefully kept generic and only makes the following assumptio
 
 This package does not provide any functionality to:
 
-- Assign cell types to cells based on the expression profile. Use any of the many available automatic cell type scoring tools (see for [this](https://github.com/seandavi/awesome-single-cell?tab=readme-ov-file#cell-type-identification-and-classification) list for a selection) or do it manually using clustering plus marker gene expression.
-- Automatically harmonize cell type labels from different references (e.g., figure out that the `NK cells` from one dataset correspond to the `Natural killer cells` from another). You will probably have to do this manually. There is an example further down in the README.
+- Assign cell types to cells based on the expression profile. Use any of the many available automatic cell type scoring tools (see for [this](https://github.com/seandavi/awesome-single-cell?tab=readme-ov-file#cell-type-identification-and-classification) list for some suggestions) or do it manually using clustering plus marker gene expression.
+- Automatically harmonize cell type labels from different references (e.g., figure out that the `NK cells` from one dataset correspond to the `Natural killer cells` from another). You have to do this manually. There is an example further down in the README.
 - Provide the optimal cell type tree. You will probably want to define the tree for your analysis depending on the annotations available to you. As a reference, look at the [cell ontology project](https://cell-ontology.github.io/), which provides a large database of cell type label relationships and is used by the Human Cell Atlas.
 - Plot trees. For demonstration purposes, we will use the `igraph` plots (which are not very pretty), and for the plot on the top, I used the [D3](https://d3js.org/) library from Javascript (which is cumbersome to use from R). See the end of the README for an example how to make pretty plots of trees with ggplot2.
 
@@ -56,21 +56,10 @@ devtools::install_github("const-ae/treelabel")
 
 # Documentation
 
-We define our label hierarchy using [`igraph`](https://r.igraph.org/articles/igraph.html).
-
-```{r tree_plot}
-tree <- igraph::graph_from_literal(
-  root - ImmuneCell : EndothelialCell : EpithelialCell,
-  ImmuneCell - TCell : BCell,
-  TCell - CD4_TCell : CD8_TCell
-)
-plot(tree, layout = igraph::layout_as_tree(tree, root = "root"),
-     vertex.size = 40, vertex.label.cex = 0.6)
-```
+`treelabel` is build to be directly compatible with the `tidyverse`. 
 
 ```{r, eval=FALSE}
 library(treelabel)
-# We will also load the tidyverse to demonstrate some functionality later
 library(tidyverse)
 ```
 ```{r, include=FALSE}
@@ -91,7 +80,7 @@ I will illustrate the process using the "pbmcsca" dataset from Seurat and score 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE, results='hide'}
 # This can take a minute to run through
 library(Seurat)
-SeuratData::InstallData("pbmcsca")
+# Might need to call `SeuratData::InstallData("pbmcsca")` first
 pbmcsca <- SeuratData::LoadData("pbmcsca")
 azimuth_res <- Azimuth::RunAzimuth(pbmcsca, reference = "pbmcref")
 # Select most important columns to make the output easier to read.
@@ -179,17 +168,69 @@ input_dat <- meta_data |>
 # The function takes many arguments. See `?test_abundance_changes` for all details
 test_abundance_changes(input_dat, design = ~ Experiment, aggregate_by = patient_id) 
 
-# We can also run `test_abundance_changes` inside dplyr::reframe (an alternative to `summarize)
+# We can also run `test_abundance_changes` inside dplyr::reframe (an alternative to `summarize`)
 # and calculate the abundance changes for each Method separately.
+# Setting `reference = `T cell` will test if the number of T cell subtypes changes as a proportion
+# of all T cells.
 input_dat |>
   reframe(test_abundance_changes(data = across(everything()), design = ~ Experiment, aggregate_by = patient_id, 
                                  reference = `T cell`, contrast = cond(Experiment = 'pbmc2') - cond(Experiment = 'pbmc1')),
           .by = Method) 
 ```
 
+### Compatibility with Bioconductor and Seurat
+
+`treelabel` works directly with the BioConductor data structures `SingleCellExperiment`, `SummarizedExperiment`, and `DataFrame`.
+
+```{r}
+# Load an example SingleCellExperiment object
+suppressMessages({
+  sce <- ExperimentHub::ExperimentHub()[["EH2259"]]
+})
+# Make a simple tree with only one level
+kang_tree <- igraph::graph_from_edgelist(cbind("root", levels(sce$cell)))
+# Add treelabel column to colData
+colData(sce)$treelabel <- treelabel(sce$cell, kang_tree)
+colData(sce)
+```
+
+The `treelabel` vectors can also be used with Seurat data. Here, we match the provided annotations to the names from the `pbmcsca_tree`.
+
+
+```{r eval=FALSE, include=TRUE}
+# Load pbmcsca again
+library(Seurat)
+pbmcsca <- SeuratData::LoadData("pbmcsca")
+```
+
+```{r}
+# We will re-use the `pbmcsca_tree` from above. The provided annotations in pbmcsca$CellType
+# are in a slightly different format, so we manually convert them.
+rename_pbmcsca_celltypes <- c(
+  "B cell" = "B", "CD14+ monocyte" = "CD14 Mono", "CD16+ monocyte" = "CD16 Mono",
+  "CD4+ T cell" = "CD4 T", "Cytotoxic T cell" = "CD8 T",  "Dendritic cell" = "DC",
+  "Megakaryocyte" = "Mono", "Natural killer cell" = "NK", 
+  "Plasmacytoid dendritic cell" = "pDC", "Unassigned" = "root"
+)
+
+pbmcsca@meta.data$tl_manual <- treelabel(rename_pbmcsca_celltypes[pbmcsca$CellType], pbmcsca_tree)
+pbmcsca@meta.data[1:5,c("orig.ident", "CellType", "tl_manual")]
+```
 
 
 ## Technical documentation
+
+We define our label hierarchy using [`igraph`](https://r.igraph.org/articles/igraph.html).
+
+```{r tree_plot}
+tree <- igraph::graph_from_literal(
+  root - ImmuneCell : EndothelialCell : EpithelialCell,
+  ImmuneCell - TCell : BCell,
+  TCell - CD4_TCell : CD8_TCell
+)
+plot(tree, layout = igraph::layout_as_tree(tree, root = "root"),
+     vertex.size = 40, vertex.label.cex = 0.6)
+```
 
 ### Constructors
 
@@ -251,14 +292,6 @@ vec[1:4]
 c(vec, vec[1:3])
 ```
 
-It also automatically coerces strings or named vectors when concatenating.
-
-```{r}
-# Actually, this is not working yet.
-# c(vec, c(BCell = 1))
-```
-
-
 You can extract the tree from a `treelabel` and the name of the tree root.
 
 ```{r}
@@ -268,7 +301,7 @@ tl_tree_root(vec)
 
 ### Testing the identity
 
-The printing function builds on the `tl_name`, which returns the first non `NA` vertex with a score larger than `0`. We can change this threshold. For example, for the third cell the *CD4_TCell* label does not pass the `0.9` threshold, but the *TCell* label does.
+The printing function builds on the `tl_name`, which returns the vertex furthest from the root that is not `NA`. We can change this threshold. For example, for the third cell the *CD4_TCell* label does not pass the `0.9` threshold, but the *TCell* label does.
 
 ```{r, paged.print=FALSE}
 tibble(vec, tl_name(vec), tl_name(vec, threshold = 0.9))
@@ -303,7 +336,7 @@ tl_atmost(vec) |> tl_score_matrix()
 tl_atleast(vec) |> tl_score_matrix()
 ```
 
-The `tl_eval` function evaluates its arguments for `tl_atmost(x)` and `tl_atleast(x)`. If the results agree, it is returned; if not, `tl_eval` returns `NA`. A word of caution: this function can give surprising results if multiple label references occur in the expression.
+The `tl_eval` function evaluates its arguments for `tl_atmost(x)` and `tl_atleast(x)`. If the results agree, that value is returned; if not, `tl_eval` returns `NA`. A word of caution: this function can give surprising results if multiple label references occur in the expression.
 
 ```{r}
 t1 <- treelabel(list(c("TCell" = 0.8)), tree)

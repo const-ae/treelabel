@@ -23,7 +23,7 @@ type*. The granularity of these cell type annotations can vary; one can
 classify cells broadly into *immune cells* or *epithelial cells* or one
 can be very detailed and distinguish within the immune cells *CD4
 positive T regulatory cells* from *CD4 positive T follicular helper
-cells*. Choosing the best annotation level can be difficult because one
+cells*. Choosing the best annotation level is difficult because one
 analysis may need broad cell types, whereas others require the highest
 possible resolution. The `treelabel` package provides an intuitive
 interface to store and work with these hierarchically related labels.
@@ -56,12 +56,12 @@ This package does not provide any functionality to:
 - Assign cell types to cells based on the expression profile. Use any of
   the many available automatic cell type scoring tools (see for
   [this](https://github.com/seandavi/awesome-single-cell?tab=readme-ov-file#cell-type-identification-and-classification)
-  list for a selection) or do it manually using clustering plus marker
-  gene expression.
+  list for some suggestions) or do it manually using clustering plus
+  marker gene expression.
 - Automatically harmonize cell type labels from different references
   (e.g., figure out that the `NK cells` from one dataset correspond to
-  the `Natural killer cells` from another). You will probably have to do
-  this manually. There is an example further down in the README.
+  the `Natural killer cells` from another). You have to do this
+  manually. There is an example further down in the README.
 - Provide the optimal cell type tree. You will probably want to define
   the tree for your analysis depending on the annotations available to
   you. As a reference, look at the [cell ontology
@@ -84,24 +84,10 @@ devtools::install_github("const-ae/treelabel")
 
 # Documentation
 
-We define our label hierarchy using
-[`igraph`](https://r.igraph.org/articles/igraph.html).
-
-``` r
-tree <- igraph::graph_from_literal(
-  root - ImmuneCell : EndothelialCell : EpithelialCell,
-  ImmuneCell - TCell : BCell,
-  TCell - CD4_TCell : CD8_TCell
-)
-plot(tree, layout = igraph::layout_as_tree(tree, root = "root"),
-     vertex.size = 40, vertex.label.cex = 0.6)
-```
-
-<img src="man/figures/README-tree_plot-1.png" width="100%" />
+`treelabel` is build to be directly compatible with the `tidyverse`.
 
 ``` r
 library(treelabel)
-# We will also load the tidyverse to demonstrate some functionality later
 library(tidyverse)
 ```
 
@@ -120,7 +106,7 @@ automated cell scores produced by, for example, Azimuth or Celltypist.
 ``` r
 # This can take a minute to run through
 library(Seurat)
-SeuratData::InstallData("pbmcsca")
+# Might need to call `SeuratData::InstallData("pbmcsca")` first
 pbmcsca <- SeuratData::LoadData("pbmcsca")
 azimuth_res <- Azimuth::RunAzimuth(pbmcsca, reference = "pbmcref")
 # Select most important columns to make the output easier to read.
@@ -287,8 +273,10 @@ test_abundance_changes(input_dat, design = ~ Experiment, aggregate_by = patient_
 #> 5 azimuth_celltypes B       0.797 0.0324       1.05 0.00000000789 0.0000000500
 #> # ℹ 15 more rows
 
-# We can also run `test_abundance_changes` inside dplyr::reframe (an alternative to `summarize)
+# We can also run `test_abundance_changes` inside dplyr::reframe (an alternative to `summarize`)
 # and calculate the abundance changes for each Method separately.
+# Setting `reference = `T cell` will test if the number of T cell subtypes changes as a proportion
+# of all T cells.
 input_dat |>
   reframe(test_abundance_changes(data = across(everything()), design = ~ Experiment, aggregate_by = patient_id, 
                                  reference = `T cell`, contrast = cond(Experiment = 'pbmc2') - cond(Experiment = 'pbmc1')),
@@ -304,7 +292,83 @@ input_dat |>
 #> # ℹ 85 more rows
 ```
 
+### Compatibility with Bioconductor and Seurat
+
+`treelabel` works directly with the BioConductor data structures
+`SingleCellExperiment`, `SummarizedExperiment`, and `DataFrame`.
+
+``` r
+# Load an example SingleCellExperiment object
+suppressMessages({
+  sce <- ExperimentHub::ExperimentHub()[["EH2259"]]
+})
+#> Warning: package 'SingleCellExperiment' was built under R version 4.4.2
+# Make a simple tree with only one level
+kang_tree <- igraph::graph_from_edgelist(cbind("root", levels(sce$cell)))
+# Add treelabel column to colData
+colData(sce)$treelabel <- treelabel(sce$cell, kang_tree)
+colData(sce)
+#> DataFrame with 29065 rows and 6 columns
+#>                        ind     stim   cluster            cell multiplets       treelabel
+#>                  <integer> <factor> <integer>        <factor>   <factor>     <treelabel>
+#> AAACATACAATGCC-1       107     ctrl         5 CD4 T cells        doublet     CD4 T cells
+#> AAACATACATTTCC-1      1016     ctrl         9 CD14+ Monocytes    singlet CD14+ Monocytes
+#> AAACATACCAGAAA-1      1256     ctrl         9 CD14+ Monocytes    singlet CD14+ Monocytes
+#> AAACATACCAGCTA-1      1256     ctrl         9 CD14+ Monocytes    doublet CD14+ Monocytes
+#> AAACATACCATGCA-1      1488     ctrl         3 CD4 T cells        singlet     CD4 T cells
+#> ...                    ...      ...       ...             ...        ...             ...
+#> TTTGCATGCTAAGC-1       107     stim         6     CD4 T cells    singlet     CD4 T cells
+#> TTTGCATGGGACGA-1      1488     stim         6     CD4 T cells    singlet     CD4 T cells
+#> TTTGCATGGTGAGG-1      1488     stim         6     CD4 T cells    ambs        CD4 T cells
+#> TTTGCATGGTTTGG-1      1244     stim         6     CD4 T cells    ambs        CD4 T cells
+#> TTTGCATGTCTTAC-1      1016     stim         5     CD4 T cells    singlet     CD4 T cells
+```
+
+The `treelabel` vectors can also be used with Seurat data. Here, we
+match the provided annotations to the names from the `pbmcsca_tree`.
+
+``` r
+# Load pbmcsca again
+library(Seurat)
+pbmcsca <- SeuratData::LoadData("pbmcsca")
+```
+
+``` r
+# We will re-use the `pbmcsca_tree` from above. The provided annotations in pbmcsca$CellType
+# are in a slightly different format, so we manually convert them.
+rename_pbmcsca_celltypes <- c(
+  "B cell" = "B", "CD14+ monocyte" = "CD14 Mono", "CD16+ monocyte" = "CD16 Mono",
+  "CD4+ T cell" = "CD4 T", "Cytotoxic T cell" = "CD8 T",  "Dendritic cell" = "DC",
+  "Megakaryocyte" = "Mono", "Natural killer cell" = "NK", 
+  "Plasmacytoid dendritic cell" = "pDC", "Unassigned" = "root"
+)
+
+pbmcsca@meta.data$tl_manual <- treelabel(rename_pbmcsca_celltypes[pbmcsca$CellType], pbmcsca_tree)
+pbmcsca@meta.data[1:5,c("orig.ident", "CellType", "tl_manual")]
+#>                    orig.ident         CellType tl_manual
+#> pbmc1_SM2_Cell_108      pbmc1 Cytotoxic T cell     CD8 T
+#> pbmc1_SM2_Cell_115      pbmc1 Cytotoxic T cell     CD8 T
+#> pbmc1_SM2_Cell_133      pbmc1 Cytotoxic T cell     CD8 T
+#> pbmc1_SM2_Cell_142      pbmc1 Cytotoxic T cell     CD8 T
+#> pbmc1_SM2_Cell_143      pbmc1 Cytotoxic T cell     CD8 T
+```
+
 ## Technical documentation
+
+We define our label hierarchy using
+[`igraph`](https://r.igraph.org/articles/igraph.html).
+
+``` r
+tree <- igraph::graph_from_literal(
+  root - ImmuneCell : EndothelialCell : EpithelialCell,
+  ImmuneCell - TCell : BCell,
+  TCell - CD4_TCell : CD8_TCell
+)
+plot(tree, layout = igraph::layout_as_tree(tree, root = "root"),
+     vertex.size = 40, vertex.label.cex = 0.6)
+```
+
+<img src="man/figures/README-tree_plot-1.png" width="100%" />
 
 ### Constructors
 
@@ -405,22 +469,14 @@ c(vec, vec[1:3])
 #> # Tree: root, ImmuneCell, TCell, Endothelial....
 ```
 
-It also automatically coerces strings or named vectors when
-concatenating.
-
-``` r
-# Actually, this is not working yet.
-# c(vec, c(BCell = 1))
-```
-
 You can extract the tree from a `treelabel` and the name of the tree
 root.
 
 ``` r
 tl_tree(vec)
-#> IGRAPH 78577f7 DN-- 8 7 -- 
+#> IGRAPH 046aa15 DN-- 8 7 -- 
 #> + attr: name (v/c)
-#> + edges from 78577f7 (vertex names):
+#> + edges from 046aa15 (vertex names):
 #> [1] root      ->ImmuneCell      root      ->EndothelialCell root      ->EpithelialCell 
 #> [4] ImmuneCell->TCell           ImmuneCell->BCell           TCell     ->CD4_TCell      
 #> [7] TCell     ->CD8_TCell
@@ -430,10 +486,10 @@ tl_tree_root(vec)
 
 ### Testing the identity
 
-The printing function builds on the `tl_name`, which returns the first
-non `NA` vertex with a score larger than `0`. We can change this
-threshold. For example, for the third cell the *CD4_TCell* label does
-not pass the `0.9` threshold, but the *TCell* label does.
+The printing function builds on the `tl_name`, which returns the vertex
+furthest from the root that is not `NA`. We can change this threshold.
+For example, for the third cell the *CD4_TCell* label does not pass the
+`0.9` threshold, but the *TCell* label does.
 
 ``` r
 tibble(vec, tl_name(vec), tl_name(vec, threshold = 0.9))
@@ -520,9 +576,9 @@ tl_atleast(vec) |> tl_score_matrix()
 ```
 
 The `tl_eval` function evaluates its arguments for `tl_atmost(x)` and
-`tl_atleast(x)`. If the results agree, it is returned; if not, `tl_eval`
-returns `NA`. A word of caution: this function can give surprising
-results if multiple label references occur in the expression.
+`tl_atleast(x)`. If the results agree, that value is returned; if not,
+`tl_eval` returns `NA`. A word of caution: this function can give
+surprising results if multiple label references occur in the expression.
 
 ``` r
 t1 <- treelabel(list(c("TCell" = 0.8)), tree)
@@ -819,118 +875,122 @@ sessionInfo()
 #> tzcode source: internal
 #> 
 #> attached base packages:
-#> [1] stats     graphics  grDevices utils     datasets  methods   base     
+#> [1] stats4    stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#>  [1] shinyBS_0.61.1     Seurat_5.1.0       SeuratObject_5.0.2 sp_2.1-4           lubridate_1.9.3   
-#>  [6] forcats_1.0.0      stringr_1.5.1      dplyr_1.1.4        purrr_1.0.2        readr_2.1.5       
-#> [11] tidyr_1.3.1        tibble_3.2.1       ggplot2_3.5.1      tidyverse_2.0.0    treelabel_0.0.6   
-#> [16] testthat_3.2.1.1  
+#>  [1] muscData_1.20.0             SingleCellExperiment_1.28.1 SummarizedExperiment_1.36.0
+#>  [4] Biobase_2.66.0              GenomicRanges_1.58.0        GenomeInfoDb_1.42.0        
+#>  [7] IRanges_2.40.0              S4Vectors_0.44.0            MatrixGenerics_1.18.0      
+#> [10] matrixStats_1.4.1           ExperimentHub_2.14.0        AnnotationHub_3.14.0       
+#> [13] BiocFileCache_2.14.0        dbplyr_2.5.0                BiocGenerics_0.52.0        
+#> [16] shinyBS_0.61.1              Seurat_5.1.0                SeuratObject_5.0.2         
+#> [19] sp_2.1-4                    lubridate_1.9.3             forcats_1.0.0              
+#> [22] stringr_1.5.1               dplyr_1.1.4                 purrr_1.0.2                
+#> [25] readr_2.1.5                 tidyr_1.3.1                 tibble_3.2.1               
+#> [28] ggplot2_3.5.1               tidyverse_2.0.0             treelabel_0.0.7            
+#> [31] testthat_3.2.1.1           
 #> 
 #> loaded via a namespace (and not attached):
 #>   [1] fs_1.6.5                          ProtGenerics_1.38.0              
-#>   [3] matrixStats_1.4.1                 spatstat.sparse_3.1-0            
-#>   [5] bitops_1.0-9                      DirichletMultinomial_1.48.0      
-#>   [7] TFBSTools_1.44.0                  devtools_2.4.5                   
-#>   [9] httr_1.4.7                        RColorBrewer_1.1-3               
-#>  [11] profvis_0.4.0                     tools_4.4.1                      
-#>  [13] sctransform_0.4.1                 utf8_1.2.4                       
-#>  [15] R6_2.5.1                          DT_0.33                          
-#>  [17] lazyeval_0.2.2                    uwot_0.2.2                       
-#>  [19] rhdf5filters_1.18.0               urlchecker_1.0.1                 
-#>  [21] withr_3.0.2                       gridExtra_2.3                    
-#>  [23] progressr_0.15.1                  cli_3.6.3                        
-#>  [25] Biobase_2.66.0                    spatstat.explore_3.3-3           
-#>  [27] fastDummies_1.7.4                 EnsDb.Hsapiens.v86_2.99.0        
-#>  [29] shinyjs_2.1.0                     labeling_0.4.3                   
-#>  [31] spatstat.data_3.1-4               ggridges_0.5.6                   
-#>  [33] pbapply_1.7-2                     Rsamtools_2.22.0                 
-#>  [35] R.utils_2.12.3                    parallelly_1.39.0                
-#>  [37] sessioninfo_1.2.2                 BSgenome_1.74.0                  
-#>  [39] rstudioapi_0.17.1                 RSQLite_2.3.8                    
-#>  [41] generics_0.1.3                    BiocIO_1.16.0                    
-#>  [43] gtools_3.9.5                      ica_1.0-3                        
-#>  [45] spatstat.random_3.3-2             googlesheets4_1.1.1              
-#>  [47] ggbezier_0.1.0                    GO.db_3.20.0                     
-#>  [49] Matrix_1.7-1                      fansi_1.0.6                      
-#>  [51] S4Vectors_0.44.0                  abind_1.4-8                      
-#>  [53] R.methodsS3_1.8.2                 lifecycle_1.0.4                  
-#>  [55] yaml_2.3.10                       SummarizedExperiment_1.36.0      
-#>  [57] glmGamPoi_1.19.3                  rhdf5_2.50.0                     
-#>  [59] SparseArray_1.6.0                 Rtsne_0.17                       
-#>  [61] grid_4.4.1                        blob_1.2.4                       
-#>  [63] promises_1.3.1                    shinydashboard_0.7.2             
-#>  [65] pwalign_1.2.0                     crayon_1.5.3                     
-#>  [67] miniUI_0.1.1.1                    lattice_0.22-6                   
-#>  [69] beachmat_2.22.0                   cowplot_1.1.3                    
-#>  [71] annotate_1.84.0                   GenomicFeatures_1.58.0           
-#>  [73] KEGGREST_1.46.0                   pillar_1.9.0                     
-#>  [75] knitr_1.49                        GenomicRanges_1.58.0             
-#>  [77] rjson_0.2.23                      future.apply_1.11.3              
-#>  [79] codetools_0.2-20                  fastmatch_1.1-4                  
-#>  [81] leiden_0.4.3.1                    glue_1.8.0                       
-#>  [83] spatstat.univar_3.1-1             data.table_1.16.2                
-#>  [85] remotes_2.5.0                     vctrs_0.6.5                      
-#>  [87] png_0.1-8                         spam_2.11-0                      
-#>  [89] cellranger_1.1.0                  poweRlaw_0.80.0                  
-#>  [91] gtable_0.3.6                      cachem_1.1.0                     
-#>  [93] xfun_0.50                         Signac_1.14.0                    
-#>  [95] S4Arrays_1.6.0                    mime_0.12                        
-#>  [97] pracma_2.4.4                      survival_3.7-0                   
-#>  [99] gargle_1.5.2                      pbmcref.SeuratData_1.0.0         
-#> [101] RcppRoll_0.3.1                    ellipsis_0.3.2                   
-#> [103] fitdistrplus_1.2-1                ROCR_1.0-11                      
-#> [105] nlme_3.1-166                      usethis_3.1.0                    
-#> [107] bit64_4.5.2                       RcppAnnoy_0.0.22                 
-#> [109] GenomeInfoDb_1.42.0               rprojroot_2.0.4                  
-#> [111] irlba_2.3.5.1                     KernSmooth_2.23-24               
-#> [113] seqLogo_1.72.0                    SeuratDisk_0.0.0.9021            
-#> [115] colorspace_2.1-1                  BiocGenerics_0.52.0              
-#> [117] DBI_1.2.3                         tidyselect_1.2.1                 
-#> [119] bit_4.5.0                         compiler_4.4.1                   
-#> [121] curl_6.0.1                        hdf5r_1.3.11                     
-#> [123] desc_1.4.3                        DelayedArray_0.32.0              
-#> [125] plotly_4.10.4                     shadowtext_0.1.4                 
-#> [127] rtracklayer_1.66.0                caTools_1.18.3                   
-#> [129] scales_1.3.0                      lmtest_0.9-40                    
-#> [131] rappdirs_0.3.3                    digest_0.6.37                    
-#> [133] goftest_1.2-3                     presto_1.0.0                     
-#> [135] spatstat.utils_3.1-1              rmarkdown_2.29                   
-#> [137] XVector_0.46.0                    htmltools_0.5.8.1                
-#> [139] pkgconfig_2.0.3                   MatrixGenerics_1.18.0            
-#> [141] fastmap_1.2.0                     ensembldb_2.30.0                 
-#> [143] rlang_1.1.4                       htmlwidgets_1.6.4                
-#> [145] UCSC.utils_1.2.0                  shiny_1.9.1                      
-#> [147] farver_2.1.2                      zoo_1.8-12                       
-#> [149] jsonlite_1.8.9                    BiocParallel_1.40.0              
-#> [151] R.oo_1.27.0                       RCurl_1.98-1.16                  
-#> [153] magrittr_2.0.3                    GenomeInfoDbData_1.2.13          
-#> [155] dotCall64_1.2                     patchwork_1.3.0                  
-#> [157] pbmcsca.SeuratData_3.0.0          Rhdf5lib_1.28.0                  
-#> [159] munsell_0.5.1                     Rcpp_1.0.13-1                    
-#> [161] reticulate_1.40.0                 stringi_1.8.4                    
-#> [163] brio_1.1.5                        zlibbioc_1.52.0                  
-#> [165] MASS_7.3-61                       plyr_1.8.9                       
-#> [167] pkgbuild_1.4.5                    parallel_4.4.1                   
-#> [169] listenv_0.9.1                     ggrepel_0.9.6                    
-#> [171] CNEr_1.42.0                       deldir_2.0-4                     
-#> [173] Biostrings_2.74.0                 splines_4.4.1                    
-#> [175] tensor_1.5                        hms_1.1.3                        
-#> [177] BSgenome.Hsapiens.UCSC.hg38_1.4.5 igraph_2.1.1                     
-#> [179] spatstat.geom_3.3-4               RcppHNSW_0.6.0                   
-#> [181] reshape2_1.4.4                    stats4_4.4.1                     
-#> [183] pkgload_1.4.0                     TFMPvalue_0.0.9                  
-#> [185] XML_3.99-0.17                     evaluate_1.0.1                   
-#> [187] JASPAR2020_0.99.10                tzdb_0.4.0                       
-#> [189] httpuv_1.6.15                     RANN_2.6.2                       
-#> [191] polyclip_1.10-7                   future_1.34.0                    
-#> [193] SeuratData_0.2.2.9001             scattermore_1.2                  
-#> [195] xtable_1.8-4                      restfulr_0.0.15                  
-#> [197] AnnotationFilter_1.30.0           RSpectra_0.16-2                  
-#> [199] later_1.4.0                       googledrive_2.1.1                
-#> [201] viridisLite_0.4.2                 lungref.SeuratData_2.0.0         
-#> [203] Azimuth_0.5.0                     memoise_2.0.1                    
-#> [205] AnnotationDbi_1.68.0              GenomicAlignments_1.42.0         
-#> [207] IRanges_2.40.0                    cluster_2.1.6                    
-#> [209] timechange_0.3.0                  globals_0.16.3
+#>   [3] spatstat.sparse_3.1-0             bitops_1.0-9                     
+#>   [5] DirichletMultinomial_1.48.0       TFBSTools_1.44.0                 
+#>   [7] devtools_2.4.5                    httr_1.4.7                       
+#>   [9] RColorBrewer_1.1-3                profvis_0.4.0                    
+#>  [11] tools_4.4.1                       sctransform_0.4.1                
+#>  [13] utf8_1.2.4                        R6_2.5.1                         
+#>  [15] DT_0.33                           lazyeval_0.2.2                   
+#>  [17] uwot_0.2.2                        rhdf5filters_1.18.0              
+#>  [19] urlchecker_1.0.1                  withr_3.0.2                      
+#>  [21] gridExtra_2.3                     progressr_0.15.1                 
+#>  [23] cli_3.6.3                         spatstat.explore_3.3-3           
+#>  [25] fastDummies_1.7.4                 EnsDb.Hsapiens.v86_2.99.0        
+#>  [27] shinyjs_2.1.0                     labeling_0.4.3                   
+#>  [29] spatstat.data_3.1-4               ggridges_0.5.6                   
+#>  [31] pbapply_1.7-2                     Rsamtools_2.22.0                 
+#>  [33] R.utils_2.12.3                    parallelly_1.39.0                
+#>  [35] sessioninfo_1.2.2                 BSgenome_1.74.0                  
+#>  [37] rstudioapi_0.17.1                 RSQLite_2.3.8                    
+#>  [39] generics_0.1.3                    BiocIO_1.16.0                    
+#>  [41] gtools_3.9.5                      ica_1.0-3                        
+#>  [43] spatstat.random_3.3-2             googlesheets4_1.1.1              
+#>  [45] ggbezier_0.1.0                    GO.db_3.20.0                     
+#>  [47] Matrix_1.7-1                      fansi_1.0.6                      
+#>  [49] abind_1.4-8                       R.methodsS3_1.8.2                
+#>  [51] lifecycle_1.0.4                   yaml_2.3.10                      
+#>  [53] rhdf5_2.50.0                      SparseArray_1.6.0                
+#>  [55] Rtsne_0.17                        glmGamPoi_1.19.3                 
+#>  [57] grid_4.4.1                        blob_1.2.4                       
+#>  [59] promises_1.3.1                    shinydashboard_0.7.2             
+#>  [61] pwalign_1.2.0                     crayon_1.5.3                     
+#>  [63] miniUI_0.1.1.1                    lattice_0.22-6                   
+#>  [65] beachmat_2.22.0                   cowplot_1.1.3                    
+#>  [67] annotate_1.84.0                   GenomicFeatures_1.58.0           
+#>  [69] KEGGREST_1.46.0                   pillar_1.9.0                     
+#>  [71] knitr_1.49                        rjson_0.2.23                     
+#>  [73] future.apply_1.11.3               codetools_0.2-20                 
+#>  [75] fastmatch_1.1-4                   leiden_0.4.3.1                   
+#>  [77] glue_1.8.0                        spatstat.univar_3.1-1            
+#>  [79] data.table_1.16.2                 remotes_2.5.0                    
+#>  [81] vctrs_0.6.5                       png_0.1-8                        
+#>  [83] spam_2.11-0                       cellranger_1.1.0                 
+#>  [85] poweRlaw_0.80.0                   gtable_0.3.6                     
+#>  [87] cachem_1.1.0                      xfun_0.50                        
+#>  [89] Signac_1.14.0                     S4Arrays_1.6.0                   
+#>  [91] mime_0.12                         pracma_2.4.4                     
+#>  [93] survival_3.7-0                    gargle_1.5.2                     
+#>  [95] pbmcref.SeuratData_1.0.0          RcppRoll_0.3.1                   
+#>  [97] ellipsis_0.3.2                    fitdistrplus_1.2-1               
+#>  [99] ROCR_1.0-11                       nlme_3.1-166                     
+#> [101] usethis_3.1.0                     bit64_4.5.2                      
+#> [103] filelock_1.0.3                    RcppAnnoy_0.0.22                 
+#> [105] rprojroot_2.0.4                   irlba_2.3.5.1                    
+#> [107] KernSmooth_2.23-24                seqLogo_1.72.0                   
+#> [109] SeuratDisk_0.0.0.9021             colorspace_2.1-1                 
+#> [111] DBI_1.2.3                         tidyselect_1.2.1                 
+#> [113] bit_4.5.0                         compiler_4.4.1                   
+#> [115] curl_6.0.1                        hdf5r_1.3.11                     
+#> [117] desc_1.4.3                        DelayedArray_0.32.0              
+#> [119] plotly_4.10.4                     shadowtext_0.1.4                 
+#> [121] rtracklayer_1.66.0                caTools_1.18.3                   
+#> [123] scales_1.3.0                      lmtest_0.9-40                    
+#> [125] rappdirs_0.3.3                    digest_0.6.37                    
+#> [127] goftest_1.2-3                     presto_1.0.0                     
+#> [129] spatstat.utils_3.1-1              rmarkdown_2.29                   
+#> [131] XVector_0.46.0                    htmltools_0.5.8.1                
+#> [133] pkgconfig_2.0.3                   fastmap_1.2.0                    
+#> [135] ensembldb_2.30.0                  rlang_1.1.4                      
+#> [137] htmlwidgets_1.6.4                 UCSC.utils_1.2.0                 
+#> [139] shiny_1.9.1                       farver_2.1.2                     
+#> [141] zoo_1.8-12                        jsonlite_1.8.9                   
+#> [143] BiocParallel_1.40.0               R.oo_1.27.0                      
+#> [145] RCurl_1.98-1.16                   magrittr_2.0.3                   
+#> [147] GenomeInfoDbData_1.2.13           dotCall64_1.2                    
+#> [149] patchwork_1.3.0                   pbmcsca.SeuratData_3.0.0         
+#> [151] Rhdf5lib_1.28.0                   munsell_0.5.1                    
+#> [153] Rcpp_1.0.13-1                     reticulate_1.40.0                
+#> [155] stringi_1.8.4                     brio_1.1.5                       
+#> [157] zlibbioc_1.52.0                   MASS_7.3-61                      
+#> [159] plyr_1.8.9                        pkgbuild_1.4.5                   
+#> [161] parallel_4.4.1                    listenv_0.9.1                    
+#> [163] ggrepel_0.9.6                     CNEr_1.42.0                      
+#> [165] deldir_2.0-4                      Biostrings_2.74.0                
+#> [167] splines_4.4.1                     tensor_1.5                       
+#> [169] hms_1.1.3                         BSgenome.Hsapiens.UCSC.hg38_1.4.5
+#> [171] igraph_2.1.1                      spatstat.geom_3.3-4              
+#> [173] RcppHNSW_0.6.0                    reshape2_1.4.4                   
+#> [175] pkgload_1.4.0                     TFMPvalue_0.0.9                  
+#> [177] BiocVersion_3.20.0                XML_3.99-0.17                    
+#> [179] evaluate_1.0.1                    BiocManager_1.30.25              
+#> [181] JASPAR2020_0.99.10                tzdb_0.4.0                       
+#> [183] httpuv_1.6.15                     RANN_2.6.2                       
+#> [185] polyclip_1.10-7                   future_1.34.0                    
+#> [187] SeuratData_0.2.2.9001             scattermore_1.2                  
+#> [189] xtable_1.8-4                      restfulr_0.0.15                  
+#> [191] AnnotationFilter_1.30.0           RSpectra_0.16-2                  
+#> [193] later_1.4.0                       googledrive_2.1.1                
+#> [195] viridisLite_0.4.2                 lungref.SeuratData_2.0.0         
+#> [197] Azimuth_0.5.0                     memoise_2.0.1                    
+#> [199] AnnotationDbi_1.68.0              GenomicAlignments_1.42.0         
+#> [201] cluster_2.1.6                     timechange_0.3.0                 
+#> [203] globals_0.16.3
 ```
