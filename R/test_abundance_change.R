@@ -51,6 +51,7 @@ vars <- function(...){
 #'   * `dispersion`: the variance of the residuals around the estimate.
 #'   * `pval`: the significance of the estimate.
 #'   * `adj_pval`: Benjamini-Hochberg adjusted p-values (i.e., the false discovery rate (FDR))
+#'   * If any GLM call fails, the data frame contains an extra `error` column with the error message.
 #'
 #'  If `return_aggregated_data = TRUE`, the function returns a tibble that contains the aggregated data that would usually
 #'  be used to fit the statistical models.
@@ -120,7 +121,6 @@ test_abundance_changes <- function(data, design, aggregate_by, contrast = NULL,
   aggr_dat <- sum_treelabels_in_dataframe(data, aggregate_by = c({{aggregate_by}}, tidyselect::all_of(additional_vars)),
                                           treelabels = {{treelabels}}, targets = {{targets}}, reference = {{reference}})
 
-
   has_warned <- FALSE
   printed_default_contrast <- FALSE
   tl_sel <- tidyselect::eval_select(rlang::enquo(treelabels), aggr_dat)
@@ -180,17 +180,19 @@ test_abundance_changes <- function(data, design, aggregate_by, contrast = NULL,
       }
 
       failed <- FALSE
+      last_error <- NULL
       tryCatch({
         fit <- modern_glm(y, design = design, offset = offset, family = model,
                           col_data = working_dat, ridge_penalty = ridge_penalty)
       }, error = function(err){
         failed_labs <<- c(failed_labs, labs)
+        last_error <<- as.character(err)
         failed <<- TRUE
       })
       if(failed){
           res <- append(res, list(tibble(treelabel = tl_name, target = labs,
                                          "{output_name}" := NA_real_ , "{output_name}_se" := NA_real_,
-                                         dispersion = NA_real_, pval = NA_real_)))
+                                         dispersion = NA_real_, pval = NA_real_, error = last_error)))
           next
       }
       contrast_capture <- rlang::enquo(contrast)
@@ -220,7 +222,7 @@ test_abundance_changes <- function(data, design, aggregate_by, contrast = NULL,
   }
   res <- vctrs::vec_rbind(!!! res)
   if(! return_aggregated_data){
-    res$adj_pval <- p.adjust(res$pval, method = "BH")
+    res <- dplyr::mutate(res, adj_pval = p.adjust(pval, method = "BH"), .after = "pval")
   }
   res
 }

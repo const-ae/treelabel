@@ -69,6 +69,7 @@ By default, the function returns a \code{tibble} with one row per statistical te
 \item \code{dispersion}: the variance of the residuals around the estimate.
 \item \code{pval}: the significance of the estimate.
 \item \code{adj_pval}: Benjamini-Hochberg adjusted p-values (i.e., the false discovery rate (FDR))
+\item If any GLM call fails, the data frame contains an extra \code{error} column with the error message.
 }
 
 If \code{return_aggregated_data = TRUE}, the function returns a tibble that contains the aggregated data that would usually
