@@ -38,7 +38,7 @@ modern_glm <- function(y, design = ~ 1, family, col_data = NULL, offset = 0, all
   X_padded <- rbind(X, lambda)
   y_padded <- if(is.matrix(y)){
     rbind(y, cbind(target, 1 - target))
-  }else{n
+  }else{
     c(y, target)
   }
   offset_padded <- c(offset, rep(0, k))
@@ -256,6 +256,9 @@ parse_contrast <- function(contrast, coefficient_names, formula = NULL) {
   for(n in covar){
     if(n %in% names(xlevels)){
       new_dat[[n]] <- factor(xlevels[[n]][1], levels = xlevels[[n]])
+      if(nlevels(new_dat[[n]]) == 1){
+        attr(new_dat[[n]], "contrasts") <- matrix(0, nrow = 1, ncol = 1)
+      }
     }
   }
   for(n in names(level_sets)){
@@ -268,9 +271,12 @@ parse_contrast <- function(contrast, coefficient_names, formula = NULL) {
     if(n %in% names(xlevels)){
       if(! level_sets[[n]] %in% xlevels[[n]]){
         stop("You are trying to set '", n, "=", level_sets[[n]], "'. However only the following values for ", n,
-             " are valid: ", paste0(xlevels[[n]], collapse = ", "))
+             " are valid: ", toString(xlevels[[n]], width = 80))
       }
       new_dat[[n]] <- factor(level_sets[[n]], levels = xlevels[[n]])
+      if(nlevels(new_dat[[n]]) == 1){
+        attr(new_dat[[n]], "contrasts") <- matrix(0, nrow = 1, ncol = 1)
+      }
     }else{
       new_dat[[n]] <- level_sets[[n]]
     }

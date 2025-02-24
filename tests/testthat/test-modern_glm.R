@@ -99,4 +99,6 @@ test_that("modern_glm can handle single level factors", {
   df <- data.frame(x = rep("a", 10))
   res <- modern_glm(y, design = ~ x, family = "gaussian", col_data = df)
   expect_equal(res$coefficients, c(mean(y), 0), ignore_attr = "names")
+  de <- test_diff(res, cond(x = "a"))
+  expect_equal(de$delta, mean(y))
 })
