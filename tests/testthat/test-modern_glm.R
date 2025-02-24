@@ -93,3 +93,10 @@ test_that("modern_glm can handle tricky inputs", {
   unmentioned_coef <- coef[! names(coef) %in% paste0("cohort", unique(col_dat$cohort)) & grepl("^cohort", names(coef))]
   expect_equal(unmentioned_coef, rep(0, length(unmentioned_coef)), ignore_attr = "names")
 })
+
+test_that("modern_glm can handle single level factors", {
+  y <- rnorm(10)
+  df <- data.frame(x = rep("a", 10))
+  res <- modern_glm(y, design = ~ x, family = "gaussian", col_data = df)
+  expect_equal(res$coefficients, c(mean(y), 0), ignore_attr = "names")
+})

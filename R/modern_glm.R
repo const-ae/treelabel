@@ -375,6 +375,15 @@ handle_design_parameter <- function(design, data, col_data, verbose = FALSE){
 
 convert_formula_to_design_matrix <- function(formula, col_data){
   attr(col_data, "na.action") <- "na.pass"
+  for(col in seq_len(ncol(col_data))){
+    if(is.character(col_data[[col]]) && nlevels(as.factor(col_data[[col]])) == 1){
+      col_data[[col]] <- as.factor(col_data[[col]])
+      attr(col_data[[col]], "contrasts") <- matrix(0, nrow = nrow(col_data))
+    }else if(is.factor(col_data[[col]]) && nlevels(as.factor(col_data[[col]])) == 1){
+      attr(col_data[[col]], "contrasts") <- matrix(0, nrow = nrow(col_data))
+    }
+  }
+
   tryCatch({
     mf <- model.frame(formula, data = col_data, drop.unused.levels = FALSE)
     offset <- as.vector(model.offset(mf))
