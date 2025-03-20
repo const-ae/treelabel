@@ -23,8 +23,8 @@ to the name of the tree root of \code{x}.}
 
 \item{...}{arguments passed to \code{\link{treelabel}}}
 
-\item{.p}{predicate that is used to filter the vertices of the tree. A function that receives the
-names of the vertices and returns a selection which ones to keep.}
+\item{.p}{predicate that is used to filter the vertices of the tree. Either a character vector or
+a function that receives the names of the vertices and indicates the selection which ones to keep.}
 
 \item{new_root}{the name of a vertex in the tree that will be
 used as the root of the cut tree.}
