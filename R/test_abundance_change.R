@@ -31,7 +31,7 @@ vars <- function(...){
 #'   cell type labels are counted. If the `treelabel` contains confidence scores, you should convert them to
 #'   booleans either before calling `test_abundance_changes` or using `targets = vars(Macrophage > 0.7, T_Cell > 0.6)`.
 #'   Default: `NULL` in which case all labels below the `reference` label are tested.
-#' @param reference a single <[`data-masking`][rlang::args_data_masking]> expression (not wrapped with `vars`!) or a character vector that defines
+#' @param reference a single <[`data-masking`][rlang::args_data_masking]> expression (not wrapped with `vars`!) that defines
 #'   which cell label is used as a reference. For example, if the `treelabel` describes immune cells with two annotation levels, where
 #'   the first level is _Myeloid_ and _Lymphoid_ cells and the second level for the Myeloid cells is _Monocytes_ and _Macrophages_,
 #'   we could count the abundance change of _Macrophages_ as a fraction of all cells (i.e., `reference = "root"`) or as a fraction of

@@ -30,6 +30,9 @@ test_that("aggregation works as expected", {
     sum(x == "Parrot")
   })
   expect_setequal(tl_get(res$tl, "Parrot"), manual_count)
+
+  res2 <- sum_treelabels_in_dataframe(data = df, aggregate_by = c(group, sample), treelabels = where(is_treelabel), reference = Animal)
+  expect_equal(res2, res, ignore_attr = "tree")
 })
 
 

@@ -44,7 +44,7 @@ cell type labels are counted. If the \code{treelabel} contains confidence scores
 booleans either before calling \code{test_abundance_changes} or using \code{targets = vars(Macrophage > 0.7, T_Cell > 0.6)}.
 Default: \code{NULL} in which case all labels below the \code{reference} label are tested.}
 
-\item{reference}{a single <\code{\link[rlang:args_data_masking]{data-masking}}> expression (not wrapped with \code{vars}!) or a character vector that defines
+\item{reference}{a single <\code{\link[rlang:args_data_masking]{data-masking}}> expression (not wrapped with \code{vars}!) that defines
 which cell label is used as a reference. For example, if the \code{treelabel} describes immune cells with two annotation levels, where
 the first level is \emph{Myeloid} and \emph{Lymphoid} cells and the second level for the Myeloid cells is \emph{Monocytes} and \emph{Macrophages},
 we could count the abundance change of \emph{Macrophages} as a fraction of all cells (i.e., \code{reference = "root"}) or as a fraction of
