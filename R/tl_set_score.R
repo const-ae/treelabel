@@ -208,7 +208,12 @@ tl_tree_filter <- function(x, .p, ...){
       cbind(mod_path[-length(mod_path)], mod_path[-1])
     }
   })))
-  tl_tree_modify(x, igraph::graph_from_edgelist(connection_matrix), ...)
+  if(nrow(connection_matrix) == 0){
+    tl_tree_modify(x, .singleton_igraph(root), ...)
+  }else{
+    tl_tree_modify(x, igraph::graph_from_edgelist(connection_matrix), ...)
+  }
+
 }
 
 #' @param new_root the name of a vertex in the tree that will be

@@ -111,6 +111,14 @@ test_that("treelabel list constructor works with different inputs",{
   vec4 <- treelabel(lst, tree = tree, tree_root = "Animal")
 })
 
+test_that("treelabel works with singleton tree",{
+  tree <- igraph::graph_from_literal(
+    Animal - Animal
+  )
+  vec1 <- treelabel("Animal", tree = tree, tree_root = "Animal")
+  expect_equal(tl_score_matrix(vec1), matrix(TRUE, dimnames = list(NULL, "Animal")))
+})
+
 test_that("treelabel_from_dataframe works", {
   tree <- igraph::graph_from_literal(
     Animal - Bird : Mammal,
@@ -235,6 +243,11 @@ test_that("tl_tree_filter works", {
     substr(x, 1, 1) == "B"
   })
   expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,c(1,2)])
+
+  vec_mod <- tl_tree_filter(vec, \(x) character(0L))
+  expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,1,drop=FALSE])
+  vec_mod <- tl_tree_filter(vec, \(x) NULL)
+  expect_equal(tl_score_matrix(vec_mod), tl_score_matrix(vec)[,1,drop=FALSE])
 })
 
 test_that("tl_tree_cut works", {

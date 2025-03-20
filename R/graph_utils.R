@@ -25,7 +25,11 @@
     # Remove root as it has no father
     nodes <- bfs_result$order[-1]$name
     fathers <- bfs_result$father[nodes]$name
-    igraph::graph_from_data_frame(data.frame(fathers, nodes), directed = TRUE)
+    if(length(nodes) == 0){
+      .singleton_igraph(root)
+    }else{
+      igraph::graph_from_data_frame(data.frame(fathers, nodes), directed = TRUE)
+    }
   }
 }
 
@@ -36,4 +40,10 @@
   }else{
     igraph::as_undirected(...)
   }
+}
+
+.singleton_igraph <- function(element){
+  graph <- igraph::make_empty_graph(n=0)
+  graph <- igraph::add_vertices(graph, nv = 1, name = element)
+  graph
 }
