@@ -474,14 +474,24 @@ root.
 
 ``` r
 tl_tree(vec)
-#> IGRAPH 046aa15 DN-- 8 7 -- 
+#> IGRAPH f49c1c0 DN-- 8 7 -- 
 #> + attr: name (v/c)
-#> + edges from 046aa15 (vertex names):
+#> + edges from f49c1c0 (vertex names):
 #> [1] root      ->ImmuneCell      root      ->EndothelialCell root      ->EpithelialCell 
 #> [4] ImmuneCell->TCell           ImmuneCell->BCell           TCell     ->CD4_TCell      
 #> [7] TCell     ->CD8_TCell
 tl_tree_root(vec)
 #> [1] "root"
+```
+
+The easiest way to get the score for a particular label inside a
+`treelabel` vector is to use `$`
+
+``` r
+vec$ImmuneCell
+#> [1] 1.00   NA 0.95   NA 0.40
+vec$CD4_TCell
+#> [1]  NA  NA 0.8  NA  NA
 ```
 
 ### Testing the identity
@@ -887,7 +897,7 @@ sessionInfo()
 #> [19] sp_2.1-4                    lubridate_1.9.3             forcats_1.0.0              
 #> [22] stringr_1.5.1               dplyr_1.1.4                 purrr_1.0.2                
 #> [25] readr_2.1.5                 tidyr_1.3.1                 tibble_3.2.1               
-#> [28] ggplot2_3.5.1               tidyverse_2.0.0             treelabel_0.0.7            
+#> [28] ggplot2_3.5.1               tidyverse_2.0.0             treelabel_0.0.7.2          
 #> [31] testthat_3.2.1.1           
 #> 
 #> loaded via a namespace (and not attached):
@@ -920,7 +930,7 @@ sessionInfo()
 #>  [53] rhdf5_2.50.0                      SparseArray_1.6.0                
 #>  [55] Rtsne_0.17                        glmGamPoi_1.19.3                 
 #>  [57] grid_4.4.1                        blob_1.2.4                       
-#>  [59] promises_1.3.1                    shinydashboard_0.7.2             
+#>  [59] promises_1.3.2                    shinydashboard_0.7.2             
 #>  [61] pwalign_1.2.0                     crayon_1.5.3                     
 #>  [63] miniUI_0.1.1.1                    lattice_0.22-6                   
 #>  [65] beachmat_2.22.0                   cowplot_1.1.3                    
@@ -948,7 +958,7 @@ sessionInfo()
 #> [109] SeuratDisk_0.0.0.9021             colorspace_2.1-1                 
 #> [111] DBI_1.2.3                         tidyselect_1.2.1                 
 #> [113] bit_4.5.0                         compiler_4.4.1                   
-#> [115] curl_6.0.1                        hdf5r_1.3.11                     
+#> [115] curl_6.2.1                        hdf5r_1.3.11                     
 #> [117] desc_1.4.3                        DelayedArray_0.32.0              
 #> [119] plotly_4.10.4                     shadowtext_0.1.4                 
 #> [121] rtracklayer_1.66.0                caTools_1.18.3                   
@@ -960,7 +970,7 @@ sessionInfo()
 #> [133] pkgconfig_2.0.3                   fastmap_1.2.0                    
 #> [135] ensembldb_2.30.0                  rlang_1.1.4                      
 #> [137] htmlwidgets_1.6.4                 UCSC.utils_1.2.0                 
-#> [139] shiny_1.9.1                       farver_2.1.2                     
+#> [139] shiny_1.10.0                      farver_2.1.2                     
 #> [141] zoo_1.8-12                        jsonlite_1.8.9                   
 #> [143] BiocParallel_1.40.0               R.oo_1.27.0                      
 #> [145] RCurl_1.98-1.16                   magrittr_2.0.3                   

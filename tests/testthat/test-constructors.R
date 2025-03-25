@@ -170,6 +170,20 @@ test_that("propagation works", {
   expect_equal(tl_score_matrix(vec3), ref)
 })
 
+test_that("dollar accessors work", {
+  tree <- igraph::graph_from_literal(
+    Animal - Bird : Mammal,
+    Bird - Parrot : Eagle,
+    Mammal - Dog : Cat
+  )
+  vec <- treelabel(c("Dog", "Parrot", "Animal", "Bird"), tree, tree_root = "Animal")
+  expect_equal(vec$Dog, tl_score_matrix(vec)[,"Dog"])
+  expect_equal(vec$Animal, tl_score_matrix(vec)[,"Animal"])
+  expect_equal(vec$Bird, tl_score_matrix(vec)[,"Bird"])
+  expect_equal(vec$Eagle, tl_score_matrix(vec)[,"Eagle"])
+
+  expect_error(vec$nonesense)
+})
 
 test_that("propagation works", {
   tree <- igraph::graph_from_literal(

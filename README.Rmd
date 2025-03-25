@@ -299,6 +299,13 @@ tl_tree(vec)
 tl_tree_root(vec)
 ```
 
+The easiest way to get the score for a particular label inside a `treelabel` vector is to use `$`
+
+```{r}
+vec$ImmuneCell
+vec$CD4_TCell
+```
+
 ### Testing the identity
 
 The printing function builds on the `tl_name`, which returns the vertex furthest from the root that is not `NA`. We can change this threshold. For example, for the third cell the *CD4_TCell* label does not pass the `0.9` threshold, but the *TCell* label does.
