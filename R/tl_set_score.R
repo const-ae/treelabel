@@ -182,16 +182,20 @@ tl_tree_modify <- function(x, new_tree, tree_root = tl_tree_root(x), ...){
   treelabel(new_mat, tree = new_tree, tree_root = tree_root, ...)
 }
 
-#' @param .p predicate that is used to filter the vertices of the tree. A function that receives the
-#'   names of the vertices and returns a selection which ones to keep.
+#' @param .p predicate that is used to filter the vertices of the tree. Either a character vector or
+#'   a function that receives the names of the vertices and indicates the selection which ones to keep.
 #'
 #' @rdname tl_tree_modify
 #' @export
 tl_tree_filter <- function(x, .p, ...){
   root <- tl_tree_root(x)
   vertices <- setdiff(colnames(tl_score_matrix(x)), root)
-  .fn <- rlang::as_function(.p)
-  res <- .fn(vertices, ...)
+  res <- if(is.character(.p) || is.null(.p)){
+    .p
+  }else{
+    .fn <- rlang::as_function(.p)
+    .fn(vertices, ...)
+  }
   indices <- vctrs::vec_as_location(res, n = length(vertices), names = vertices)
   names_to_keep <- c(root, vertices[indices])
 
@@ -208,7 +212,12 @@ tl_tree_filter <- function(x, .p, ...){
       cbind(mod_path[-length(mod_path)], mod_path[-1])
     }
   })))
-  tl_tree_modify(x, igraph::graph_from_edgelist(connection_matrix), ...)
+  if(nrow(connection_matrix) == 0){
+    tl_tree_modify(x, .singleton_igraph(root), ...)
+  }else{
+    tl_tree_modify(x, igraph::graph_from_edgelist(connection_matrix), ...)
+  }
+
 }
 
 #' @param new_root the name of a vertex in the tree that will be
