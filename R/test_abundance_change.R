@@ -221,7 +221,7 @@ test_abundance_changes <- function(data, design, aggregate_by, contrast = NULL,
     }
   }
   res <- vctrs::vec_rbind(!!! res)
-  if(! return_aggregated_data){
+  if(! return_aggregated_data && "pval" %in% colnames(res)){
     res <- dplyr::mutate(res, adj_pval = p.adjust(pval, method = "BH"), .after = "pval")
   }
   res
