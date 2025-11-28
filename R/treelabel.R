@@ -17,7 +17,7 @@
 #'
 #'
 #' @export
-treelabel <- function(x, tree,  tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+treelabel <- function(x, tree = NULL,  tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
   if(missing(x)){
     treelabel.missing(tree = tree, tree_root = tree_root, ...)
   }else{
@@ -27,7 +27,7 @@ treelabel <- function(x, tree,  tree_root = "root", propagate_up = c("sum", "cum
 
 #' @export
 #' @rdname treelabel
-treelabel.matrix <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+treelabel.matrix <- function(x, tree = NULL, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
   res <- new_treelabel(x, tree, tree_root = tree_root, ...)
   res <- .propagate_score_up(res, mode = propagate_up, overwrite = FALSE)
   if(is.logical(x)){
@@ -39,7 +39,7 @@ treelabel.matrix <- function(x, tree, tree_root = "root", propagate_up = c("sum"
 #' @importFrom rlang `%||%`
 #' @export
 #' @rdname treelabel
-treelabel.list <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+treelabel.list <- function(x, tree = NULL, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
   # vctrs records currently do not support being named
   x <- unname(x)
   # Convert to list of numerics
@@ -66,13 +66,13 @@ treelabel.list <- function(x, tree, tree_root = "root", propagate_up = c("sum", 
 
 #' @export
 #' @rdname treelabel
-treelabel.numeric <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+treelabel.numeric <- function(x, tree = NULL, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
   .treelabel_from_id_label_score(seq_along(x), names(x), unname(x), tree = tree, tree_root = tree_root, propagate_up = propagate_up, ...)
 }
 
 #' @export
 #' @rdname treelabel
-treelabel.logical <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+treelabel.logical <- function(x, tree = NULL, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
   res <- .treelabel_from_id_label_score(seq_along(x), names(x), unname(x), tree = tree, tree_root = tree_root, propagate_up = propagate_up, ...)
   res |>
     tl_replace_NAs() |>
@@ -81,7 +81,7 @@ treelabel.logical <- function(x, tree, tree_root = "root", propagate_up = c("sum
 
 #' @export
 #' @rdname treelabel
-treelabel.character <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+treelabel.character <- function(x, tree = NULL, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
   res <- treelabel(rlang::rep_named(x, 1), tree = tree, tree_root = tree_root, propagate_up = propagate_up, ...)
   res |>
     tl_replace_NAs() |>
@@ -90,13 +90,13 @@ treelabel.character <- function(x, tree, tree_root = "root", propagate_up = c("s
 
 #' @export
 #' @rdname treelabel
-treelabel.factor <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+treelabel.factor <- function(x, tree = NULL, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
   treelabel(as.character(x), tree = tree, tree_root = tree_root, propagate_up = propagate_up, ...)
 }
 
 #' @export
 #' @rdname treelabel
-treelabel.missing <- function(x, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
+treelabel.missing <- function(x, tree = NULL, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
   treelabel(character(0L), tree, tree_root = tree_root, propagate_up = propagate_up)
 }
 
@@ -106,7 +106,10 @@ treelabel.missing <- function(x, tree, tree_root = "root", propagate_up = c("sum
 }
 
 .treelabel_from_id_label_score <- function(ids, labels, scores, tree, tree_root = "root", propagate_up = c("sum", "cumsum", "none"), ...){
-  stopifnot(igraph::is_tree(tree))
+  if(is.null(tree)){
+    tree <- .make_default_tree(labels, tree_root)
+  }
+  tree <- .make_tree(tree, root = tree_root)
   vertex_names <- .tree_vertex_names(tree)
 
 
@@ -131,11 +134,13 @@ treelabel.missing <- function(x, tree, tree_root = "root", propagate_up = c("sum
   res
 }
 
-new_treelabel <- function(data, tree, tree_root = "root", distances = NULL){
+new_treelabel <- function(data, tree = NULL, tree_root = "root", distances = NULL){
   if(! inherits(data, "matrix")){
     stop("'data' must be a matrix")
   }
-
+  if(is.null(tree)){
+    tree <- .make_default_tree(colnames(data), tree_root)
+  }
   if(! tree_root %in% .tree_vertex_names(tree)){
     stop("'tree_root=", tree_root, "' is not in vertices.")
   }
@@ -191,6 +196,23 @@ tl_tree_root <- function(x){
   .get_tree_root(x)
 }
 
+
+.make_default_tree <- function(nodes, tree_root){
+  # Remove problematic bits
+  nodes <- unique(nodes)
+  nodes <- nodes[! is.na(nodes)]
+  nodes <- nodes[nodes != ""]
+
+  stopifnot(vctrs::vec_unique_count(nodes) == length(nodes))
+  stopifnot(length(tree_root) == 1)
+  stopifnot(is.character(nodes) && is.character(tree_root))
+  stopifnot(all(! is.na(nodes)) && ! is.na(tree_root))
+  if(length(nodes) == 0){
+    .singleton_igraph(tree_root)
+  }else{
+    igraph::graph_from_edgelist(cbind(tree_root, nodes))
+  }
+}
 
 .assign_to_matrix <- function(data, labels, ids, scores){
   ids <- as.factor(ids)

@@ -13,7 +13,7 @@
 \usage{
 treelabel(
   x,
-  tree,
+  tree = NULL,
   tree_root = "root",
   propagate_up = c("sum", "cumsum", "none"),
   ...
@@ -21,7 +21,7 @@ treelabel(
 
 \method{treelabel}{matrix}(
   x,
-  tree,
+  tree = NULL,
   tree_root = "root",
   propagate_up = c("sum", "cumsum", "none"),
   ...
@@ -29,7 +29,7 @@ treelabel(
 
 \method{treelabel}{list}(
   x,
-  tree,
+  tree = NULL,
   tree_root = "root",
   propagate_up = c("sum", "cumsum", "none"),
   ...
@@ -37,7 +37,7 @@ treelabel(
 
 \method{treelabel}{numeric}(
   x,
-  tree,
+  tree = NULL,
   tree_root = "root",
   propagate_up = c("sum", "cumsum", "none"),
   ...
@@ -45,7 +45,7 @@ treelabel(
 
 \method{treelabel}{logical}(
   x,
-  tree,
+  tree = NULL,
   tree_root = "root",
   propagate_up = c("sum", "cumsum", "none"),
   ...
@@ -53,7 +53,7 @@ treelabel(
 
 \method{treelabel}{character}(
   x,
-  tree,
+  tree = NULL,
   tree_root = "root",
   propagate_up = c("sum", "cumsum", "none"),
   ...
@@ -61,7 +61,7 @@ treelabel(
 
 \method{treelabel}{factor}(
   x,
-  tree,
+  tree = NULL,
   tree_root = "root",
   propagate_up = c("sum", "cumsum", "none"),
   ...
@@ -69,7 +69,7 @@ treelabel(
 
 \method{treelabel}{missing}(
   x,
-  tree,
+  tree = NULL,
   tree_root = "root",
   propagate_up = c("sum", "cumsum", "none"),
   ...

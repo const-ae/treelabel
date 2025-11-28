@@ -39,6 +39,10 @@ test_that("treelabel constructors works", {
   expect_equal(data, mat[,col_match] == 1)
 })
 
+test_that("treelabel default tree works", {
+  vec <- treelabel(letters)
+  expect_true(igraph::identical_graphs(tl_tree(vec), igraph::graph_from_edgelist(cbind("root", letters))))
+})
 
 test_that("treelabel constructors works", {
   tree <- igraph::graph_from_literal(
@@ -46,7 +50,6 @@ test_that("treelabel constructors works", {
     Bird - Parrot : Eagle,
     Mammal - Dog : Cat
   )
-
 
   vec1 <- treelabel(c("Eagle", "Dog", NA, "Bird"), tree = tree, tree_root = "Animal")
 
@@ -139,6 +142,25 @@ test_that("treelabel_from_dataframe works", {
                                    id = "uniq_names", label = "n", score = "s", name = "output")
   expect_equal(nrow(dat3), 4)
   expect_equal(dat3$output[4], treelabel("Parrot", tree, "Animal"), ignore_attr = "tree")
+})
+
+test_that("default tree construction works", {
+  vec00 <- treelabel(tree_root = "Animal")
+  vec0 <- treelabel("Animal", tree_root = "Animal")
+  vec1 <- treelabel(c("Eagle", "Dog", NA, "Bird"), tree_root = "Animal")
+  vec2 <- treelabel(c("Eagle" = 1, "Dog" = 1, NA, "Bird" = 1), tree_root = "Animal")
+  vec3 <- treelabel(c("Eagle" = TRUE, "Dog" = TRUE, NA, "Bird" = TRUE), tree_root = "Animal")
+  vec4 <- treelabel(
+    list(c(Eagle = 1, Bird = 1),
+         c(Animal = 1, Dog = 1),
+         NA,
+         c(Bird = 1)
+    ), tree_root = "Animal")
+  expect_true(.check_tree_compatible(tl_tree(vec00), "Animal", tl_tree(vec4), "Animal"))
+  expect_true(.check_tree_compatible(tl_tree(vec0), "Animal", tl_tree(vec4), "Animal"))
+  expect_true(.check_tree_compatible(tl_tree(vec1), "Animal", tl_tree(vec4), "Animal"))
+  expect_true(.check_tree_compatible(tl_tree(vec2), "Animal", tl_tree(vec4), "Animal"))
+  expect_true(.check_tree_compatible(tl_tree(vec3), "Animal", tl_tree(vec4), "Animal"))
 })
 
 test_that("propagation works", {
