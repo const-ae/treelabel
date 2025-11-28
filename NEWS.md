@@ -1,3 +1,8 @@
+# treelabel 0.0.8
+
+* Make a default tree if nothing is specified
+* Allow merging compatible trees
+
 # treelabel 0.0.7
 
 * Add new function `test_abundance_changes`.
