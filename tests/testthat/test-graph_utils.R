@@ -42,3 +42,31 @@ test_that("tree checking works", {
   tree4 <- .make_tree(tree3, "Animal")
   expect_true(.is_tree(tree4, root = "Animal"))
 })
+
+
+test_that("tree compatibility check works", {
+  tree1 <- igraph::graph_from_literal(A -+ B : C)
+  tree1_root <- "A"
+  tree2 <- igraph::graph_from_literal(A -+ B, B -+ C)
+  tree2_root <- "A"
+  expect_error(.check_tree_compatible(tree1, tree1_root = "A",
+                                      tree2, tree2_root = "A"))
+
+  .graph_entry_exit_times(igraph::make_tree(10), root = 1)
+
+  tree1 <- igraph::graph_from_literal(A -+ B : C)
+  tree2 <- igraph::graph_from_literal(A -+ B)
+  expect_true(.check_tree_compatible(tree1, tree1_root = "A",
+                                     tree2, tree2_root = "A"))
+
+  tree1 <- igraph::graph_from_literal(A -+ B : C)
+  tree2 <- igraph::graph_from_literal(A -+ C)
+  expect_true(.check_tree_compatible(tree1, tree1_root = "A",
+                                     tree2, tree2_root = "A"))
+
+  tree1 <- igraph::graph_from_literal(A -+ B -+ C)
+  tree2 <- igraph::graph_from_literal(A -+ C -+ B)
+  expect_error(.check_tree_compatible(tree1, tree1_root = "A",
+                                     tree2, tree2_root = "A"))
+
+})
