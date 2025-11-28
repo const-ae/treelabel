@@ -74,3 +74,30 @@ test_that("test_abundance_change works as expected", {
   )
 })
 
+test_that("test_abundance_changes the reference is a leaf works correctly", {
+  tree <- igraph::graph_from_literal(
+    Animal - Bird : Mammal,
+    Bird - Parrot : Eagle,
+    Mammal - Dog : Cat
+  )
+  animal <- c("Parrot", "Eagle", "Dog", "Cat")
+  df <- rbind(
+    data.frame(group = "A",
+               sample = sample(1:4, size = 100, replace = TRUE),
+               animal = sample(animal, size = 1000, prob = c(0.4, 0.3, 0.2, 0.1), replace = TRUE)),
+    data.frame(group = "B",
+               sample = sample(1:4, size = 100, replace = TRUE),
+               animal = sample(animal, size = 1000, replace = TRUE))
+  )
+  df$tl <- treelabel(df$animal, tree = tree, tree_root = "Animal")
+
+  res1 <- test_abundance_changes(df, design = ~ group, aggregate_by = c(sample), reference = Cat)
+  res1_ref <- suppressMessages(test_abundance_changes(df, design = ~ group, aggregate_by = c(sample), reference = Animal))
+  expect_equal(res1, vctrs::vec_ptype(res1_ref))
+
+  res2 <- test_abundance_changes(df, design = ~ group, aggregate_by = c(sample), reference = Cat, return_aggregated_data = TRUE)
+  res2_ref <- suppressMessages(test_abundance_changes(df, design = ~ group, aggregate_by = c(sample), reference = Animal, return_aggregated_data = TRUE))
+  res2$tl <- res2$tl |> tl_tree_modify(tl_tree(res2_ref$tl), tree_root = "Animal")  # Force trees to be equal
+  expect_equal(res2, vctrs::vec_ptype(res2_ref))
+})
+

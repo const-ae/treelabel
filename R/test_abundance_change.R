@@ -220,7 +220,15 @@ test_abundance_changes <- function(data, design, aggregate_by, contrast = NULL,
       message("Fit failed in ", tl_name,  " for targets: ", toString(failed_labs, width=60))
     }
   }
-  res <- vctrs::vec_rbind(!!! res)
+  res_ptype <- if(return_aggregated_data){
+    vctrs::vec_cbind(vctrs::vec_ptype(aggr_dat), tibble(reference= character(0L), reference_count = numeric(0L),
+                                                    target = character(0L), target_count = numeric(0L)))
+  }else{
+    tibble(treelabel=character(0L), target = character(0L), LFC = numeric(0L),
+           LFC_se = numeric(0L), dispersion = numeric(0L), pval = numeric(0L))
+  }
+
+  res <- vctrs::vec_rbind(!!! res, .ptype = res_ptype)
   if(! return_aggregated_data && "pval" %in% colnames(res)){
     res <- dplyr::mutate(res, adj_pval = p.adjust(pval, method = "BH"), .after = "pval")
   }
