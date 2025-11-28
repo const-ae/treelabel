@@ -70,3 +70,36 @@ test_that("tree compatibility check works", {
                                      tree2, tree2_root = "A"))
 
 })
+
+
+test_that("tree compatibility check works", {
+  tree1 <- igraph::graph_from_literal(A -+ B : C,
+                                      C -+ D)
+  tree2 <- igraph::graph_from_literal(A -+ D)
+  res <- .merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "A")
+  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree1, "A"))
+  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree2, "A"))
+  expect_true(.is_tree(res$tree, res$tree_root))
+
+  tree1 <- igraph::graph_from_literal(A -+ B : C, C -+ D)
+  tree2 <- igraph::graph_from_literal(A -+ D)
+  .merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "A")
+  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree1, "A"))
+  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree2, "A"))
+  expect_true(.is_tree(res$tree, res$tree_root))
+
+  tree1 <- igraph::graph_from_literal(A -+ B : C, C -+ D)
+  tree2 <- .singleton_igraph("B")
+  .merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "B")
+  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree1, "A"))
+  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree2, "B"))
+  expect_true(.is_tree(res$tree, res$tree_root))
+
+  tree1 <- igraph::graph_from_literal(A -+ B : C, C -+ D)
+  tree2 <- igraph::graph_from_literal(C -+ E : D, D -+ F : H)
+  .merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "C")
+  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree1, "A"))
+  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree2, "C"))
+  expect_true(.is_tree(res$tree, res$tree_root))
+
+})

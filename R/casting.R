@@ -5,19 +5,29 @@ NULL
 
 #' @export
 vec_ptype2.treelabel.treelabel <- function(x, y, ..., x_arg = "", y_arg = ""){
-   # Potentially check if the one tree is a subtree of the other?
-  if(! igraph::identical_graphs(.get_tree(x), .get_tree(y))){
-    vctrs::stop_incompatible_type(x, y, x_arg = x_arg, y_arg = y_arg, details = "tree of 'x' and 'y' is not identical")
-  }
-  if(.get_tree_root(x) != .get_tree_root(y)){
-    vctrs::stop_incompatible_type(x, y, x_arg = x_arg, y_arg = y_arg, details = "tree_root of 'x' and 'y' is not identical")
-  }
-  if(is.logical(tl_score_matrix(x)) && ! is.logical(tl_score_matrix(y))){
-    y
+  if(igraph::identical_graphs(.get_tree(x), .get_tree(y))){
+    if(.get_tree_root(x) != .get_tree_root(y)){
+      vctrs::stop_incompatible_type(x, y, x_arg = x_arg, y_arg = y_arg, details = "tree_root of 'x' and 'y' is not identical")
+    }
+    if(is.logical(tl_score_matrix(x)) && ! is.logical(tl_score_matrix(y))){
+      y
+    }else{
+      # Either both are numeric or both are logical or x is numeric and y is logical.
+      # Anyways, the output should be a treelabel with a numeric score matrix
+      x
+    }
   }else{
-    # Either both are numeric or both are logical or x is numeric and y is logical.
-    # Anyways, the output should be a treelabel with a numeric score matrix
-    x
+    if(! .check_tree_compatible(.get_tree(x), .get_tree_root(x),
+                                .get_tree(y), .get_tree_root(y), error = FALSE)){
+      vctrs::stop_incompatible_type(x, y, x_arg = x_arg, y_arg = y_arg, details = "tree of 'x' and 'y' cannot be merged")
+    }
+    merged_tree <- .merge_trees(.get_tree(x), .get_tree_root(x),
+                                .get_tree(y), .get_tree_root(y))
+    if(is.logical(tl_score_matrix(x)) && ! is.logical(tl_score_matrix(y))){
+      tl_tree_modify(y, merged_tree$tree, merged_tree$tree_root)
+    }else{
+      tl_tree_modify(x, merged_tree$tree, merged_tree$tree_root)
+    }
   }
 }
 
@@ -33,14 +43,14 @@ vec_ptype2.character.treelabel <- function(x, y, ...){
 
 #' @export
 vec_cast.treelabel.treelabel <- function(x, to, ..., x_arg = "", to_arg = ""){
-  stopifnot(igraph::identical_graphs(.get_tree(x), .get_tree(to)))
-  stopifnot(.get_tree_root(x) == .get_tree_root(to))
   if(! igraph::identical_graphs(.get_tree(x), .get_tree(to))){
-    vctrs::stop_incompatible_cast(x, to, x_arg = x_arg, y_arg = to_arg, details = "tree of 'x' and 'to' is not identical")
+    # Only check compatibility if the graphs are not idenitical already
+    if(! .check_tree_compatible(.get_tree(x), .get_tree_root(x),
+                                .get_tree(to), .get_tree_root(to), error = FALSE)){
+      vctrs::stop_incompatible_cast(x, to, x_arg = x_arg, y_arg = to_arg, details = "tree of 'x' and 'to' cannot be merged")
+    }
   }
-  if(.get_tree_root(x) != .get_tree_root(to)){
-    vctrs::stop_incompatible_cast(x, to, x_arg = x_arg, y_arg = to_arg, details = "tree_root of 'x' and 'to' is not identical")
-  }
+  x <- tl_tree_modify(x, .get_tree(to), .get_tree_root(to))
   if(is.logical(tl_score_matrix(x)) && ! is.logical(tl_score_matrix(to))){
     x <- tl_as_numeric(x)
   }
