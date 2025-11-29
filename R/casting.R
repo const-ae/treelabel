@@ -17,10 +17,7 @@ vec_ptype2.treelabel.treelabel <- function(x, y, ..., x_arg = "", y_arg = ""){
       x
     }
   }else{
-    if(! .check_tree_compatible(.get_tree(x), .get_tree_root(x),
-                                .get_tree(y), .get_tree_root(y), error = FALSE)){
-      vctrs::stop_incompatible_type(x, y, x_arg = x_arg, y_arg = y_arg, details = "tree of 'x' and 'y' cannot be merged")
-    }
+    # Might fail
     merged_tree <- .merge_trees(.get_tree(x), .get_tree_root(x),
                                 .get_tree(y), .get_tree_root(y))
     if(is.logical(tl_score_matrix(x)) && ! is.logical(tl_score_matrix(y))){
@@ -43,9 +40,10 @@ vec_ptype2.character.treelabel <- function(x, y, ...){
 
 #' @export
 vec_cast.treelabel.treelabel <- function(x, to, ..., x_arg = "", to_arg = ""){
+  stopifnot(.is_tree(.get_tree(to), .get_tree_root(to)))
   if(! igraph::identical_graphs(.get_tree(x), .get_tree(to))){
     # Only check compatibility if the graphs are not idenitical already
-    if(! .check_tree_compatible(.get_tree(x), .get_tree_root(x),
+    if(! .check_parent_child_relations(.get_tree(x), .get_tree_root(x),
                                 .get_tree(to), .get_tree_root(to), error = FALSE)){
       vctrs::stop_incompatible_cast(x, to, x_arg = x_arg, y_arg = to_arg, details = "tree of 'x' and 'to' cannot be merged")
     }

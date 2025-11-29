@@ -68,7 +68,7 @@
   list(entry = tin, exit = tout)
 }
 
-.check_tree_compatible <- function(tree1, tree1_root, tree2, tree2_root, error = TRUE){
+.check_parent_child_relations <- function(tree1, tree1_root, tree2, tree2_root, error = TRUE){
   stopifnot(.is_tree(tree1, tree1_root))
   stopifnot(.is_tree(tree2, tree2_root))
 
@@ -79,7 +79,7 @@
 
   df$parent_child1 <- inout_times1$entry[df$n1] <= inout_times1$entry[df$n2] & inout_times1$exit[df$n2] <= inout_times1$exit[df$n1]
   df$parent_child2 <- inout_times2$entry[df$n1] <= inout_times2$entry[df$n2] & inout_times2$exit[df$n2] <= inout_times2$exit[df$n1]
-
+  # Check parent child relations are retained
   if(any(df$parent_child1 != df$parent_child2)){
     if(error){
       mismatch <- which(df$parent_child1 != df$parent_child2)
@@ -97,13 +97,11 @@
 
 .graph_reachability <- function(g, self_reachable = TRUE){
   nodes <- igraph::V(g)
-  R <- Matrix::sparseMatrix(i=integer(0L), j = integer(0L),
+  j <- lapply(nodes, \(n) as.integer(igraph::subcomponent(g, n, mode = "out")))
+  i <- rep(as.integer(nodes), lengths(j))
+  R <- Matrix::sparseMatrix(i=i, j=unlist(j), x=TRUE,
                             dims = c(length(nodes), length(nodes)),
                             dimnames = lapply(list(nodes, nodes), names))
-  for(n in names(nodes)){
-    reachable <- igraph::subcomponent(g, n, mode = "out")
-    R[n, names(reachable)] <- TRUE
-  }
   if(! self_reachable){
     diag(R) <- FALSE
   }
@@ -113,7 +111,6 @@
 .graph_transitive_reduction <- function(g){
   A <- igraph::as_adjacency_matrix(g, sparse = TRUE)
   R <- .graph_reachability(g, self_reachable = FALSE)
-
   indirect_paths <- A %*% R
   A[indirect_paths > 0] <- 0
   igraph::graph_from_adjacency_matrix(A, mode = "directed")
@@ -123,20 +120,23 @@
   stopifnot(.is_tree(tree1, tree1_root))
   stopifnot(.is_tree(tree2, tree2_root))
 
-  .check_tree_compatible(tree1, tree1_root, tree2, tree2_root)
+  # Make sure that it even makes sense to try to merge the trees
+  .check_parent_child_relations(tree1, tree1_root, tree2, tree2_root)
   new_tree <- .graph_transitive_reduction(igraph::union(tree1, tree2))
-
-  # Figure out what is the new root
   new_root <- if(length(igraph::neighbors(new_tree, tree1_root, mode = "in")) == 0){
     tree1_root
   }else if(length(igraph::neighbors(new_tree, tree2_root, mode = "in")) == 0){
     tree2_root
   }else{
-    stop("This should not happen")
+    stop("Merged tree would have two roots")
   }
-  .check_tree_compatible(tree1, tree1_root, new_tree, new_root)
-  .check_tree_compatible(new_tree, new_root, tree2, tree2_root)
-  stopifnot(.is_tree(new_tree, new_root))
+  if(! .is_tree(new_tree, new_root)){
+    stop("Union of tree1 and tree2 is not a tree anymore.")
+  }
+  # Make sure that the parent child relations are retained by the new graph (This should not fail)
+  .check_parent_child_relations(tree1, tree1_root, new_tree, new_root)
+  .check_parent_child_relations(new_tree, new_root, tree2, tree2_root)
+
   list(tree = new_tree, tree_root = new_root)
 }
 

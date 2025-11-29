@@ -60,6 +60,6 @@ test_that("merging different trees works", {
   )
   vec2 <- treelabel(c("Bird", "Dog", "Eagle"), tree = tree)
   new_tree <- tree |> igraph::add_vertices(1, name = "Dolphin") |> igraph::add_edges(c("root", "Dolphin"))
-  expect_true(.check_tree_compatible(tl_tree(c(vec1, vec2)), "root", new_tree, "root"))
+  expect_true(.check_parent_child_relations(tl_tree(c(vec1, vec2)), "root", new_tree, "root"))
 })
 

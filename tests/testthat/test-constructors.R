@@ -156,11 +156,11 @@ test_that("default tree construction works", {
          NA,
          c(Bird = 1)
     ), tree_root = "Animal")
-  expect_true(.check_tree_compatible(tl_tree(vec00), "Animal", tl_tree(vec4), "Animal"))
-  expect_true(.check_tree_compatible(tl_tree(vec0), "Animal", tl_tree(vec4), "Animal"))
-  expect_true(.check_tree_compatible(tl_tree(vec1), "Animal", tl_tree(vec4), "Animal"))
-  expect_true(.check_tree_compatible(tl_tree(vec2), "Animal", tl_tree(vec4), "Animal"))
-  expect_true(.check_tree_compatible(tl_tree(vec3), "Animal", tl_tree(vec4), "Animal"))
+  expect_true(.check_parent_child_relations(tl_tree(vec00), "Animal", tl_tree(vec4), "Animal"))
+  expect_true(.check_parent_child_relations(tl_tree(vec0), "Animal", tl_tree(vec4), "Animal"))
+  expect_true(.check_parent_child_relations(tl_tree(vec1), "Animal", tl_tree(vec4), "Animal"))
+  expect_true(.check_parent_child_relations(tl_tree(vec2), "Animal", tl_tree(vec4), "Animal"))
+  expect_true(.check_parent_child_relations(tl_tree(vec3), "Animal", tl_tree(vec4), "Animal"))
 })
 
 test_that("propagation works", {

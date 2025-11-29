@@ -44,29 +44,29 @@ test_that("tree checking works", {
 })
 
 
-test_that("tree compatibility check works", {
+test_that("parent-child relation checks works", {
   tree1 <- igraph::graph_from_literal(A -+ B : C)
   tree1_root <- "A"
   tree2 <- igraph::graph_from_literal(A -+ B, B -+ C)
   tree2_root <- "A"
-  expect_error(.check_tree_compatible(tree1, tree1_root = "A",
+  expect_error(.check_parent_child_relations(tree1, tree1_root = "A",
                                       tree2, tree2_root = "A"))
 
   .graph_entry_exit_times(igraph::make_tree(10), root = 1)
 
   tree1 <- igraph::graph_from_literal(A -+ B : C)
   tree2 <- igraph::graph_from_literal(A -+ B)
-  expect_true(.check_tree_compatible(tree1, tree1_root = "A",
+  expect_true(.check_parent_child_relations(tree1, tree1_root = "A",
                                      tree2, tree2_root = "A"))
 
   tree1 <- igraph::graph_from_literal(A -+ B : C)
   tree2 <- igraph::graph_from_literal(A -+ C)
-  expect_true(.check_tree_compatible(tree1, tree1_root = "A",
+  expect_true(.check_parent_child_relations(tree1, tree1_root = "A",
                                      tree2, tree2_root = "A"))
 
   tree1 <- igraph::graph_from_literal(A -+ B -+ C)
   tree2 <- igraph::graph_from_literal(A -+ C -+ B)
-  expect_error(.check_tree_compatible(tree1, tree1_root = "A",
+  expect_error(.check_parent_child_relations(tree1, tree1_root = "A",
                                      tree2, tree2_root = "A"))
 
 })
@@ -77,29 +77,58 @@ test_that("tree compatibility check works", {
                                       C -+ D)
   tree2 <- igraph::graph_from_literal(A -+ D)
   res <- .merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "A")
-  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree1, "A"))
-  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree2, "A"))
+  expect_true(.check_parent_child_relations(res$tree, res$tree_root, tree1, "A"))
+  expect_true(.check_parent_child_relations(res$tree, res$tree_root, tree2, "A"))
   expect_true(.is_tree(res$tree, res$tree_root))
 
   tree1 <- igraph::graph_from_literal(A -+ B : C, C -+ D)
   tree2 <- igraph::graph_from_literal(A -+ D)
-  .merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "A")
-  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree1, "A"))
-  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree2, "A"))
+  res <- .merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "A")
+  expect_true(.check_parent_child_relations(res$tree, res$tree_root, tree1, "A"))
+  expect_true(.check_parent_child_relations(res$tree, res$tree_root, tree2, "A"))
   expect_true(.is_tree(res$tree, res$tree_root))
 
   tree1 <- igraph::graph_from_literal(A -+ B : C, C -+ D)
   tree2 <- .singleton_igraph("B")
-  .merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "B")
-  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree1, "A"))
-  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree2, "B"))
+  res <- .merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "B")
+  expect_true(.check_parent_child_relations(res$tree, res$tree_root, tree1, "A"))
+  expect_true(.check_parent_child_relations(res$tree, res$tree_root, tree2, "B"))
   expect_true(.is_tree(res$tree, res$tree_root))
 
   tree1 <- igraph::graph_from_literal(A -+ B : C, C -+ D)
   tree2 <- igraph::graph_from_literal(C -+ E : D, D -+ F : H)
-  .merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "C")
-  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree1, "A"))
-  expect_true(.check_tree_compatible(res$tree, res$tree_root, tree2, "C"))
+  res <- .merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "C")
+  expect_true(.check_parent_child_relations(res$tree, res$tree_root, tree1, "A"))
+  expect_true(.check_parent_child_relations(res$tree, res$tree_root, tree2, "C"))
   expect_true(.is_tree(res$tree, res$tree_root))
 
+
+  tree1 <- igraph::graph_from_literal(A -+ B, B -+ D)
+  tree2 <- igraph::graph_from_literal(A -+ C, C -+ D)
+  expect_error(.merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "A"))
+
+  tree1 <- igraph::graph_from_literal(A -+ C)
+  tree2 <- igraph::graph_from_literal(B -+ C)
+  expect_error(.merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "B"))
+
+  tree1 <- igraph::graph_from_literal(A -+ B -+ C, A -+ D)
+  tree2 <- igraph::graph_from_literal(B -+ C -+ D)
+  expect_error(.merge_trees(tree1, tree1_root = "A", tree2, tree2_root = "B"))
+
+  # The .graph_transitive_reduction needs half a second to merge two trees with 1000 nodes each
+  # And the time grows quadratic from there
+
+  # tree1 <- igraph::sample_tree(n = 2000) |>
+  #   igraph::set_vertex_attr("name", value =  as.character(1:2000)) |>
+  #   .make_tree(root = "1")
+  # tree2 <- igraph::sample_tree(n = 2000) |>
+  #   igraph::set_vertex_attr("name", value =  as.character(1:2000)) |>
+  #   .make_tree(root = "1")
+  # system.time(
+  #   .check_parent_child_relations(tree1, tree1_root = "1", tree2, tree2_root = "1")
+  # )
+  # g <- igraph::union(tree1, tree2)
+  # system.time(
+  #   .graph_transitive_reduction(g)
+  # )
 })
